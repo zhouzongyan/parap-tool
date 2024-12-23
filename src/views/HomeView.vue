@@ -10,7 +10,8 @@ import BaseLayout from "@/components/BaseLayout.vue";
       </div>
       <div class="right ct">
         <router-link to="/pinterest">Pinterest</router-link>|
-        <router-link to="/image-data">Image Data</router-link>
+        <router-link to="/image-data">Image Data</router-link>|
+        <a href="https://wallpaper.parap.us.kg">wallpaper</a>
       </div>
     </template>
     <div>
