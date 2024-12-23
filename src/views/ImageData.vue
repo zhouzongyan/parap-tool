@@ -75,6 +75,9 @@
                     {{ isLoading ? '加载中...' : '读取数据' }}
                 </button>
                 <div class="extracted-data">{{ extractedData }}</div>
+                <button v-if="extractedData" @click="downloadExtractedData" class="download-btn">
+                    下载数据
+                </button>
             </div>
 
             <!-- 预览卡片 -->
@@ -106,8 +109,18 @@ const imageUrl = ref('')
 const useCompression = ref(true)
 const compressionStatus = ref('未检测')
 const extractedData = ref('')
+const extractedDataRaw = ref('')
 const previewSrc = ref('')
 const isLoading = ref(false)
+const isFileInput = ref(false)
+const fileExtension = ref('')
+const extractResult = ref<{
+    success: boolean;
+    dataRaw?: Uint8Array;
+    displayData?: string;
+    extension?: string;
+    error?: string;
+} | null>(null)
 
 // 计算属性
 const compressionStatusColor = computed(() => {
@@ -126,6 +139,11 @@ const switchDataInput = (type: 'text' | 'file') => {
     activeDataInput.value = type
     if (type === 'text') {
         dataFileName.value = ''
+        isFileInput.value = false
+        dataInput.value = ''
+    } else {
+        dataInput.value = ''
+        isFileInput.value = true
     }
 }
 
@@ -168,11 +186,13 @@ const handleReadImageInput = async (event: Event) => {
 const loadDataFile = async (event: Event) => {
     const input = event.target as HTMLInputElement
     if (input.files && input.files[0]) {
-        dataFileName.value = input.files[0].name
+        const file = input.files[0]
+        dataFileName.value = file.name
         try {
-            const buffer = await input.files[0].arrayBuffer()
-            const text = new TextDecoder().decode(new Uint8Array(buffer))
-            dataInput.value = text
+            const buffer = await file.arrayBuffer()
+            dataInput.value = new Uint8Array(buffer)
+            isFileInput.value = true
+            fileExtension.value = file.name.split('.').pop() || ''
         } catch (e) {
             alert('读取文件失败')
         }
@@ -194,7 +214,13 @@ const embedData = async () => {
 
     const imageFile = imageInput.files[0]
     try {
-        const finalData = await embedDataToImage(imageFile, dataInput.value, useCompression.value)
+        const finalData = await embedDataToImage(
+            imageFile,
+            dataInput.value,
+            useCompression.value,
+            !isFileInput.value,
+            fileExtension.value
+        )
 
         // 创建下载链接
         const blob = new Blob([finalData], { type: imageFile.type })
@@ -258,14 +284,6 @@ const extractData = async () => {
             return
         }
         try {
-            // 验证URL格式
-            try {
-                new URL(imageUrl.value)
-            } catch {
-                alert('请输入有效的URL')
-                return
-            }
-
             fileData = await loadImageFromUrl(imageUrl.value)
         } catch (e) {
             alert(e instanceof Error ? e.message : '加载图片失败')
@@ -283,15 +301,36 @@ const extractData = async () => {
     const result = await extractDataFromImage(fileData)
     if (!result.success) {
         extractedData.value = result.error
+        extractedDataRaw.value = ''
+        extractResult.value = null
         compressionStatus.value = result.error === '数据格式错误' ? '错误' : '未检测'
         return
     }
 
-    extractedData.value = result.data.length > 5000
-        ? result.data.substring(0, 5000) + '\n\n... (数据太长，已截断显示)'
-        : result.data
-
+    // 使用显示数据和完整数据分别赋值
+    extractedData.value = result.displayData
+    extractedDataRaw.value = result.dataRaw
+    extractResult.value = result
     compressionStatus.value = result.isCompressed ? '已压缩' : '未压缩'
+}
+
+// 修改下载函数
+const downloadExtractedData = () => {
+    if (!extractedDataRaw.value || !extractResult.value) return
+
+    const blob = new Blob([extractedDataRaw.value])
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const extension = extractResult.value.extension || 'txt'
+    a.download = `extracted_data_${timestamp}.${extension}`
+
+    a.href = url
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
 }
 </script>
 
@@ -503,5 +542,15 @@ button:hover {
     .container {
         grid-template-columns: 1fr;
     }
+}
+
+/* 添加下载按钮的样式 */
+.download-btn {
+    margin-top: 20px;
+    background: var(--c-green);
+}
+
+.download-btn:hover {
+    background: var(--c-green-dark);
 }
 </style>

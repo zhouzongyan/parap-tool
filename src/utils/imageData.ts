@@ -43,34 +43,67 @@ export const checkMarker = (data: Uint8Array, start: number, marker: Uint8Array)
     return true
 }
 
+// 添加一个函数来处理后缀名
+const getExtensionBytes = (extension: string): Uint8Array => {
+    // 移除点号并转换为小写
+    extension = extension.replace(/^\./, '').toLowerCase()
+    // 创建8字节的数组
+    const bytes = new Uint8Array(8)
+    // 将后缀名转换为字节
+    const encoder = new TextEncoder()
+    const extensionBytes = encoder.encode(extension)
+    // 复制最多8个字节
+    bytes.set(extensionBytes.slice(0, 8))
+    return bytes
+}
+
+const getExtensionFromBytes = (bytes: Uint8Array): string => {
+    // 找到第一个0字节的位置
+    let end = bytes.findIndex(b => b === 0)
+    if (end === -1) end = 8
+    // 转换为字符串
+    return new TextDecoder().decode(bytes.slice(0, end))
+}
+
 // 主要功能函数
-export const embedDataToImage = async (imageFile: File, data: string, useCompression: boolean) => {
+export const embedDataToImage = async (
+    imageFile: File,
+    data: string | Uint8Array,
+    useCompression: boolean,
+    isText: boolean = true,
+    extension?: string
+) => {
     try {
-        // 1. 将文本数据转换为字节
-        const textData = stringToBytes(data)
+        // 1. 根据输入类型处理数据
+        const inputData = isText ? stringToBytes(data as string) : data as Uint8Array
 
         // 2. 根据需要压缩数据
-        const processedData = useCompression ? pako.deflate(textData) : textData
+        const processedData = useCompression ? pako.deflate(inputData) : inputData
 
         // 3. 准备标记和长度信息
         const markerBytes = stringToBytes(useCompression ? MARKER_COMPRESSED : MARKER_UNCOMPRESSED)
         const lengthBytes = numberToBytes(processedData.length)
 
-        // 4. 获取原始图片数据
+        // 4. 准备后缀名信息
+        const extensionBytes = getExtensionBytes(extension || (isText ? 'txt' : ''))
+
+        // 5. 获取原始图片数据
         const imageData = new Uint8Array(await imageFile.arrayBuffer())
 
-        // 5. 验证数据大小
-        const totalSize = imageData.length + processedData.length + markerBytes.length + lengthBytes.length
+        // 6. 验证数据大小
+        const totalSize = imageData.length + processedData.length + markerBytes.length +
+            lengthBytes.length + extensionBytes.length
         if (totalSize > Number.MAX_SAFE_INTEGER) {
             throw new Error('数据太大')
         }
 
-        // 6. 按照正确的顺序组合数据
+        // 7. 按照正确的顺序组合数据
         return concatenateArrays(
             imageData,      // 原始图片数据
-            processedData,  // 处理后的数据（可能是压缩的）
-            markerBytes,    // 标记（DATA_END 或 DATA_ZIP）
-            lengthBytes     // 8字节的长度信息
+            processedData,  // 处理后的数据
+            markerBytes,    // 标记
+            extensionBytes, // 后缀名（8字节）
+            lengthBytes     // 长度信息（8字节）
         )
     } catch (e) {
         console.error('Error in embedDataToImage:', e)
@@ -110,7 +143,8 @@ export const extractDataFromImage = async (fileData: Uint8Array) => {
     const markerCompressed = stringToBytes(MARKER_COMPRESSED)
     const markerUncompressed = stringToBytes(MARKER_UNCOMPRESSED)
 
-    for (let i = fileData.length - 8 - Math.max(markerCompressed.length, markerUncompressed.length); i >= 0; i--) {
+    // 从文件末尾开始查找标记
+    for (let i = fileData.length - 16 - Math.max(markerCompressed.length, markerUncompressed.length); i >= 0; i--) {
         if (checkMarker(fileData, i, markerCompressed)) {
             markerIndex = i
             isCompressed = true
@@ -127,32 +161,58 @@ export const extractDataFromImage = async (fileData: Uint8Array) => {
         return { success: false, error: '未找到隐藏数据' }
     }
 
-    const currentMarker = isCompressed ? markerCompressed : markerUncompressed
-    const lengthBytes = fileData.slice(markerIndex + currentMarker.length, markerIndex + currentMarker.length + 8)
-    const dataLength = bytesToNumber(lengthBytes)
-
-    if (dataLength <= 0 || dataLength > markerIndex) {
-        return { success: false, error: '数据格式错误' }
-    }
-
-    const dataStartIndex = markerIndex - dataLength
-    const extractedBytes = fileData.slice(dataStartIndex, dataStartIndex + dataLength)
-
     try {
-        const text = isCompressed
-            ? bytesToString(pako.inflate(extractedBytes))
-            : bytesToString(extractedBytes)
+        const currentMarker = isCompressed ? markerCompressed : markerUncompressed
 
-        return {
-            success: true,
-            data: text,
-            isCompressed
+        // 读取后缀名（在标记后的8字节）
+        const extensionBytes = fileData.slice(markerIndex + currentMarker.length, markerIndex + currentMarker.length + 8)
+        const extension = getExtensionFromBytes(extensionBytes)
+
+        // 读取数据长度（在后缀名后的8字节）
+        const lengthBytes = fileData.slice(markerIndex + currentMarker.length + 8, markerIndex + currentMarker.length + 16)
+        const dataLength = bytesToNumber(lengthBytes)
+
+        if (dataLength <= 0 || dataLength > markerIndex) {
+            return { success: false, error: '数据格式错误' }
+        }
+
+        const dataStartIndex = markerIndex - dataLength
+        let extractedBytes = fileData.slice(dataStartIndex, markerIndex)
+
+        if (isCompressed) {
+            extractedBytes = pako.inflate(extractedBytes)
+        }
+
+        // 如果是文本格式，提供预览
+        const isTextFile = extension === 'txt' || extension === ''
+        if (isTextFile) {
+            const decompressedText = bytesToString(extractedBytes)
+            const displayText = decompressedText.length > 5000
+                ? decompressedText.substring(0, 5000) + '\n\n... (数据太长，已截断显示)'
+                : decompressedText
+
+            return {
+                success: true,
+                dataRaw: extractedBytes,
+                displayData: displayText,
+                extension,
+                isCompressed
+            }
+        } else {
+            // 对于非文本文件，不提供预览
+            return {
+                success: true,
+                dataRaw: extractedBytes,
+                displayData: `二进制文件 (${extension})`,
+                extension,
+                isCompressed
+            }
         }
     } catch (e) {
+        console.error('Data extraction failed:', e)
         return { success: false, error: '读取数据失败' }
     }
 }
-
 // 从URL加载图片数据
 export const loadImageFromUrl = async (url: string) => {
     // 1. 先尝试直接获取图片
