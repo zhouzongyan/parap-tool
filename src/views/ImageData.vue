@@ -5,13 +5,8 @@
             <!-- 写入数据卡片 -->
             <div class="card">
                 <h3>写入数据</h3>
-                <div class="file-input-wrapper" style="display: flex; justify-content: space-between">
-                    <div>
-                        <label class="file-input-label" for="imageInput">选择图片文件</label>
-                        <input type="file" id="imageInput" accept="image/*" @change="handleImageInput">
-                        <div class="file-name">{{ imageFileName }}</div>
-                    </div>
-                </div>
+                <FileUpload ref="imageUploadRef" v-model="imageFileName" input-id="imageInput" accept="image/*"
+                    placeholder="选择图片文件或拖拽至此" icon="📁" @file-selected="handleImageSelected" />
                 <div class="data-input-section">
                     <div class="input-tabs">
                         <button class="tab-btn" :class="{ active: activeDataInput === 'text' }"
@@ -24,14 +19,13 @@
                         </button>
                     </div>
                     <div id="textInput" class="input-panel" :class="{ active: activeDataInput === 'text' }">
-                        <textarea v-model="dataInput" placeholder="输入要隐藏的数据..."></textarea>
+                        <textarea :value="typeof dataInput === 'string' ? dataInput : ''"
+                            @input="e => dataInput = (e.target as HTMLTextAreaElement).value"
+                            placeholder="输入要隐藏的数据..."></textarea>
                     </div>
                     <div id="fileInput" class="input-panel" :class="{ active: activeDataInput === 'file' }">
-                        <div class="file-input-wrapper">
-                            <label class="file-input-label" for="dataFileInput">选择数据文件</label>
-                            <input type="file" id="dataFileInput" @change="loadDataFile">
-                            <div class="file-name">{{ dataFileName }}</div>
-                        </div>
+                        <FileUpload ref="dataUploadRef" v-model="dataFileName" input-id="dataFileInput"
+                            placeholder="选择数据文件或拖拽至此" icon="📄" @file-selected="handleDataFileSelected" />
                     </div>
                 </div>
                 <div class="checkbox-wrapper">
@@ -56,11 +50,9 @@
                         </button>
                     </div>
                     <div id="fileImageInput" class="input-panel" :class="{ active: activeImageInput === 'file' }">
-                        <div class="file-input-wrapper">
-                            <label class="file-input-label" for="readImageInput">选择图片文件</label>
-                            <input type="file" id="readImageInput" accept="image/*" @change="handleReadImageInput">
-                            <div class="file-name">{{ readImageFileName }}</div>
-                        </div>
+                        <FileUpload ref="readImageUploadRef" v-model="readImageFileName" input-id="readImageInput"
+                            accept="image/*" placeholder="选择图片文件或拖拽至此" icon="📁"
+                            @file-selected="handleReadImageSelected" />
                     </div>
                     <div id="urlImageInput" class="input-panel" :class="{ active: activeImageInput === 'url' }">
                         <input type="text" v-model="imageUrl" placeholder="输入图片URL..." class="url-input"
@@ -97,6 +89,7 @@ import {
     extractDataFromImage,
     loadImageFromUrl
 } from '@/utils/imageData'
+import FileUpload from '@/components/FileUpload.vue'
 
 // 状态管理
 const activeDataInput = ref('text')
@@ -121,6 +114,11 @@ const extractResult = ref<{
     extension?: string;
     error?: string;
 } | null>(null)
+
+// 添加拖拽状态
+const isDraggingImage = ref(false)
+const isDraggingData = ref(false)
+const isDraggingReadImage = ref(false)
 
 // 计算属性
 const compressionStatusColor = computed(() => {
@@ -163,46 +161,33 @@ const switchImageInput = (type: 'file' | 'url') => {
     extractedData.value = ''
 }
 
-const handleImageInput = (event: Event) => {
-    const input = event.target as HTMLInputElement
-    if (input.files && input.files[0]) {
-        imageFileName.value = input.files[0].name
-        const reader = new FileReader()
-        reader.onload = (e) => {
-            previewSrc.value = e.target?.result as string
-        }
-        reader.readAsDataURL(input.files[0])
+const handleImageSelected = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+        previewSrc.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+}
+
+const handleDataFileSelected = async (file: File) => {
+    try {
+        const buffer = await file.arrayBuffer()
+        dataInput.value = new Uint8Array(buffer)
+        isFileInput.value = true
+        fileExtension.value = file.name.split('.').pop() || ''
+    } catch (e) {
+        alert('读取文件失败')
     }
 }
 
-const handleReadImageInput = async (event: Event) => {
-    const input = event.target as HTMLInputElement
-    if (input.files && input.files[0]) {
-        readImageFileName.value = input.files[0].name
-        await checkCompressionStatus(input.files[0])
-    }
-}
-
-const loadDataFile = async (event: Event) => {
-    const input = event.target as HTMLInputElement
-    if (input.files && input.files[0]) {
-        const file = input.files[0]
-        dataFileName.value = file.name
-        try {
-            const buffer = await file.arrayBuffer()
-            dataInput.value = new Uint8Array(buffer)
-            isFileInput.value = true
-            fileExtension.value = file.name.split('.').pop() || ''
-        } catch (e) {
-            alert('读取文件失败')
-        }
-    }
+const handleReadImageSelected = async (file: File) => {
+    await checkCompressionStatus(file)
 }
 
 // 主要功能函数
 const embedData = async () => {
-    const imageInput = document.getElementById('imageInput') as HTMLInputElement
-    if (!imageInput.files?.[0]) {
+    const imageFile = imageUploadRef.value?.selectedFile
+    if (!imageFile) {
         alert('请选择图片文件')
         return
     }
@@ -212,7 +197,6 @@ const embedData = async () => {
         return
     }
 
-    const imageFile = imageInput.files[0]
     try {
         const finalData = await embedDataToImage(
             imageFile,
@@ -261,7 +245,7 @@ const checkCompressionStatusByUrl = async () => {
         const fileData = await loadImageFromUrl(imageUrl.value)
         const result = await checkImageCompression(fileData)
         if (!result.found) {
-            compressionStatus.value = '未检测到数据'
+            compressionStatus.value = '未检���到数据'
             extractedData.value = ''
             return
         }
@@ -290,12 +274,12 @@ const extractData = async () => {
             return
         }
     } else {
-        const imageInput = document.getElementById('readImageInput') as HTMLInputElement
-        if (!imageInput.files?.[0]) {
+        const imageFile = readImageUploadRef.value?.selectedFile
+        if (!imageFile) {
             alert('请选择图片文件')
             return
         }
-        fileData = new Uint8Array(await imageInput.files[0].arrayBuffer())
+        fileData = new Uint8Array(await imageFile.arrayBuffer())
     }
 
     const result = await extractDataFromImage(fileData)
@@ -332,32 +316,76 @@ const downloadExtractedData = () => {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
 }
+
+// 添加拖拽处理函数
+const handleImageDrop = (e: DragEvent) => {
+    isDraggingImage.value = false
+    const file = e.dataTransfer?.files[0]
+    if (file && file.type.startsWith('image/')) {
+        imageFileName.value = file.name
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            previewSrc.value = e.target?.result as string
+        }
+        reader.readAsDataURL(file)
+    }
+}
+
+const handleDataDrop = async (e: DragEvent) => {
+    isDraggingData.value = false
+    const file = e.dataTransfer?.files[0]
+    if (file) {
+        dataFileName.value = file.name
+        try {
+            const buffer = await file.arrayBuffer()
+            dataInput.value = new Uint8Array(buffer)
+            isFileInput.value = true
+            fileExtension.value = file.name.split('.').pop() || ''
+        } catch (e) {
+            alert('读取文件失败')
+        }
+    }
+}
+
+const handleReadImageDrop = async (e: DragEvent) => {
+    isDraggingReadImage.value = false
+    const file = e.dataTransfer?.files[0]
+    if (file && file.type.startsWith('image/')) {
+        readImageFileName.value = file.name
+        await checkCompressionStatus(file)
+    }
+}
+
+// 添加文件引用
+const imageUploadRef = ref<InstanceType<typeof FileUpload> | null>(null)
+const dataUploadRef = ref<InstanceType<typeof FileUpload> | null>(null)
+const readImageUploadRef = ref<InstanceType<typeof FileUpload> | null>(null)
 </script>
 
 <style scoped>
 .image-data {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 20px;
 }
 
 .container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    gap: 20px;
 }
 
 h1 {
     grid-column: 1 / -1;
     text-align: center;
     color: var(--c-text-1);
-    margin-bottom: 30px;
-    font-size: 2.5em;
+    margin-bottom: 20px;
+    font-size: 2em;
 }
 
 .card {
     background: var(--c-bg);
-    padding: 30px;
+    padding: 20px;
     border-radius: 15px;
     box-shadow: var(--vt-shadow-2);
     transition: all 0.3s ease;
@@ -371,8 +399,8 @@ h1 {
 
 h3 {
     color: var(--c-text-1);
-    margin-bottom: 20px;
-    font-size: 1.5em;
+    margin-bottom: 15px;
+    font-size: 1.3em;
 }
 
 .input-group {
@@ -381,26 +409,34 @@ h3 {
 
 .file-input-wrapper {
     position: relative;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 2px dashed var(--c-divider);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    text-align: center;
 }
 
-.file-input-wrapper input[type="file"] {
-    display: none;
+.file-input-wrapper.dragging {
+    border-color: var(--c-blue);
+    background: var(--c-bg-soft);
+}
+
+.upload-icon {
+    font-size: 2em;
+    margin-bottom: 10px;
 }
 
 .file-input-label {
-    display: inline-block;
-    padding: 12px 20px;
-    background: var(--c-blue);
-    color: var(--c-white);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    box-shadow: var(--vt-shadow-1);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
 }
 
 .file-input-label:hover {
-    background: var(--c-blue-dark);
+    background: var(--c-bg-soft);
 }
 
 .file-name {
@@ -411,13 +447,13 @@ h3 {
 
 textarea {
     width: 100%;
-    height: 120px;
+    height: 100px;
     padding: 15px;
     border: 1px solid var(--c-divider);
     border-radius: 8px;
     resize: vertical;
     font-family: inherit;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     background-color: var(--c-bg);
     color: var(--c-text-1);
 }
@@ -430,7 +466,7 @@ textarea:focus {
 .input-tabs {
     display: flex;
     gap: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .tab-btn {
@@ -459,7 +495,7 @@ textarea:focus {
 }
 
 .checkbox-wrapper {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -467,8 +503,8 @@ textarea:focus {
 }
 
 .compression-status {
-    margin-bottom: 20px;
-    padding: 8px;
+    margin-bottom: 15px;
+    padding: 6px;
     border-radius: 6px;
     background: var(--c-bg-soft);
     border: 1px solid var(--c-divider);
@@ -476,13 +512,13 @@ textarea:focus {
 }
 
 .extracted-data {
-    margin-top: 20px;
+    margin-top: 15px;
     padding: 15px;
     background: var(--c-bg-soft);
     border-radius: 8px;
     border: 1px solid var(--c-divider);
     min-height: 100px;
-    max-height: 300px;
+    max-height: 200px;
     overflow-y: auto;
     white-space: pre-wrap;
     word-break: break-all;
@@ -498,7 +534,7 @@ textarea:focus {
     max-width: 100%;
     border-radius: 8px;
     box-shadow: var(--vt-shadow-1);
-    margin-top: 20px;
+    margin-top: 15px;
     border: 1px solid var(--c-divider);
     background: var(--c-bg-soft);
 }
@@ -546,7 +582,7 @@ button:hover {
 
 /* 添加下载按钮的样式 */
 .download-btn {
-    margin-top: 20px;
+    margin-top: 15px;
     background: var(--c-green);
 }
 
