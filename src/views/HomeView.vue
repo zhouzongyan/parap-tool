@@ -5,13 +5,16 @@ import BaseLayout from "@/components/BaseLayout.vue";
 <template>
   <BaseLayout>
     <template #header>
-      <div><h1>Para's Tool</h1></div>
+      <div>
+        <h1>Para's Tool</h1>
+      </div>
       <div class="right ct">
-        <router-link to="/pinterest">Pinterest</router-link>
+        <router-link to="/pinterest">Pinterest</router-link>|
+        <router-link to="/image-data">Image Data</router-link>
       </div>
     </template>
     <div>
-    <router-view></router-view>
+      <router-view></router-view>
     </div>
   </BaseLayout>
 </template>
@@ -21,9 +24,11 @@ import BaseLayout from "@/components/BaseLayout.vue";
 .right {
   margin-left: auto;
 }
-h1{
+
+h1 {
   user-select: none;
 }
+
 @media (max-width: 767px) {
   h1 {
     display: none;
