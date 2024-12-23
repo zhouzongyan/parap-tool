@@ -1,0 +1,182 @@
+/**
+ * Colors Base
+ *
+ * These are the pure base color presets. Most of the time, you should not be
+ * using these colors directly in the theme but rather use "Colors Theme"
+ * instead because those are "Theme (light or dark)" dependant.
+ * -------------------------------------------------------------------------- */
+
+:root {
+    --c-white: #ffffff;
+    --c-white-soft: #f9f9f9;
+    --c-white-mute: #f1f1f1;
+
+    --c-black: #1a1a1a;
+    --c-black-pure: #000000;
+    --c-black-soft: #242424;
+    --c-black-mute: #2f2f2f;
+
+    --c-indigo: #213547;
+    --c-indigo-soft: #476582;
+    --c-indigo-light: #aac8e4;
+
+    --c-gray: #8e8e8e;
+    --c-gray-light-1: #aeaeae;
+    --c-gray-light-2: #c7c7c7;
+    --c-gray-light-3: #d1d1d1;
+    --c-gray-light-4: #e5e5e5;
+    --c-gray-light-5: #f2f2f2;
+    --c-gray-dark-1: #636363;
+    --c-gray-dark-2: #484848;
+    --c-gray-dark-3: #3a3a3a;
+    --c-gray-dark-4: #282828;
+    --c-gray-dark-5: #202020;
+
+    --c-divider-light-1: rgba(60, 60, 60, 0.29);
+    --c-divider-light-2: rgba(60, 60, 60, 0.12);
+    --c-divider-dark-1: rgba(84, 84, 84, 0.65);
+    --c-divider-dark-2: rgba(84, 84, 84, 0.48);
+
+    --c-text-light-1: rgba(60, 60, 60, 1);
+    --c-text-light-2: rgba(60, 60, 60, 0.70);
+    --c-text-light-3: rgba(60, 60, 60, 0.33);
+    --c-text-light-4: rgba(60, 60, 60, 0.18);
+    --c-text-light-code: var(--c-indigo-soft);
+
+    --c-text-dark-1: rgba(255, 255, 255, 0.87);
+    --c-text-dark-2: rgba(235, 235, 235, 0.60);
+    --c-text-dark-3: rgba(235, 235, 235, 0.38);
+    --c-text-dark-4: rgba(235, 235, 235, 0.18);
+    --c-text-dark-code: var(--c-indigo-light);
+
+    --c-green: #42b883;
+    --c-green-light: #42d392;
+    --c-green-lighter: #35eb9a;
+    --c-green-dark: #33a06f;
+    --c-green-darker: #155f3e;
+
+    --c-blue: #3b8eed;
+    --c-blue-light: #549ced;
+    --c-blue-lighter: #50a2ff;
+    --c-blue-dark: #3468a3;
+    --c-blue-darker: #255489;
+
+    --c-yellow: #ffc517;
+    --c-yellow-light: #ffe417;
+    --c-yellow-lighter: #ffff17;
+    --c-yellow-dark: #e0ad15;
+    --c-yellow-darker: #bc9112;
+
+    --c-red: #ed3c50;
+    --c-red-light: #f43771;
+    --c-red-lighter: #fd1d7c;
+    --c-red-dark: #cd2d3f;
+    --c-red-darker: #ab2131;
+
+    --c-purple: #de41e0;
+    --c-purple-light: #e936eb;
+    --c-purple-lighter: #f616f8;
+    --c-purple-dark: #823c83;
+    --c-purple-darker: #602960;
+}
+
+/*Colors Theme*/
+:root {
+    --c-bg: var(--c-white);
+    --c-bg-soft: var(--c-white-soft);
+    --c-bg-mute: var(--c-white-mute);
+
+    --c-divider: var(--c-divider-light-1);
+    --c-divider-light: var(--c-divider-light-2);
+
+    --c-divider-inverse: var(--c-divider-dark-1);
+    --c-divider-inverse-light: var(--c-divider-dark-2);
+
+    --c-text: var(--c-text-light-2);
+    --c-text-1: var(--c-text-light-1);
+    --c-text-2: var(--c-text-light-2);
+    --c-text-3: var(--c-text-light-3);
+    --c-text-4: var(--c-text-light-4);
+    --c-text-code: var(--c-text-light-code);
+
+    --c-text-inverse-1: var(--c-text-dark-1);
+    --c-text-inverse-2: var(--c-text-dark-2);
+    --c-text-inverse-3: var(--c-text-dark-3);
+    --c-text-inverse-4: var(--c-text-dark-4);
+
+    --c-green1: var(--c-green-light);
+    --c-green2: var(--c-green-lighter);
+
+    --c-blue1: var(--c-blue-light);
+    --c-blue2: var(--c-blue-lighter);
+
+    --c-yellow1: var(--c-yellow-light);
+    --c-yellow2: var(--c-yellow-lighter);
+
+    --c-red1: var(--c-red-light);
+    --c-red2: var(--c-red-lighter);
+
+    --c-purple1: var(--c-purple-light);
+    --c-purple2: var(--c-purple-lighter);
+
+    --c-gray-1: var(--c-gray-light-1);
+    --c-gray-2: var(--c-gray-light-2);
+    --c-gray-3: var(--c-gray-light-3);
+    --c-gray-4: var(--c-gray-light-4);
+    --c-gray-5: var(--c-gray-light-5);
+}
+
+:root[data-theme='dark'] {
+    --c-bg: var(--c-black);
+    --c-bg-soft: var(--c-black-soft);
+    --c-bg-mute: var(--c-black-mute);
+
+    --c-divider: var(--c-divider-dark-1);
+    --c-divider-light: var(--c-divider-dark-2);
+
+    --c-divider-inverse: var(--c-divider-light-1);
+    --c-divider-inverse-light: var(--c-divider-light-2);
+
+    --c-text: var(--c-text-dark-2);
+    --c-text-1: var(--c-text-dark-1);
+    --c-text-2: var(--c-text-dark-2);
+    --c-text-3: var(--c-text-dark-3);
+    --c-text-4: var(--c-text-dark-4);
+    --c-text-code: var(--c-text-dark-code);
+
+    --c-text-inverse-1: var(--c-text-light-1);
+    --c-text-inverse-2: var(--c-text-light-2);
+    --c-text-inverse-3: var(--c-text-light-3);
+    --c-text-inverse-4: var(--c-text-light-4);
+
+
+    --c-green1: var(--c-green-dark);
+    --c-green2: var(--c-green-darker);
+
+    --c-blue1: var(--c-blue-dark);
+    --c-blue2: var(--c-blue-darker);
+
+    --c-yellow1: var(--c-yellow-dark);
+    --c-yellow2: var(--c-yellow-darker);
+
+    --c-red1: var(--c-red-dark);
+    --c-red2: var(--c-red-darker);
+
+    --c-purple1: var(--c-purple-dark);
+    --c-purple2: var(--c-purple-darker);
+
+    --c-gray-1: var(--c-gray-dark-1);
+    --c-gray-2: var(--c-gray-dark-2);
+    --c-gray-3: var(--c-gray-dark-3);
+    --c-gray-4: var(--c-gray-dark-4);
+    --c-gray-5: var(--c-gray-dark-5);
+}
+
+/*Shadows*/
+:root {
+    --vt-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --vt-shadow-2: 0 3px 12px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.07);
+    --vt-shadow-3: 0 12px 32px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08);
+    --vt-shadow-4: 0 14px 44px rgba(0, 0, 0, 0.12), 0 3px 9px rgba(0, 0, 0, 0.12);
+    --vt-shadow-5: 0 18px 56px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(0, 0, 0, 0.16);
+}
