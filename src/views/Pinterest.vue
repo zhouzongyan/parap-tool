@@ -72,12 +72,12 @@ async function getInfo() {
     const response = await fetch(hostName() + "/tool/pinterest", {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: JSON.stringify({
+      body: new URLSearchParams({
         userName: userName.value,
         boardName: boardName.value
-      })
+      }).toString()
     });
     if (response.ok) {
       const res = await response.json();
