@@ -38,4 +38,17 @@ cursor的composer,确实厉害
 后面用vue框架,帮他debug了2个问题,花了1个小时就搞定了
 
 # [电话号码查询工具](https://tool.parap.us.kg/phone-number)
+原贴[手机号码中间四位补齐工具](https://www.52pojie.cn/thread-1992709-1-1.html),但是他没给源码,且数据不全.  
+该项目为纯js项目, 
+[源码地址](https://github.com/pzx521521/parap-tool)
+[在线demo](https://tool.parap.us.kg/phone-number)
+![pAxwtOK.png](https://s21.ax1x.com/2024/12/29/pAxwtOK.png)
 ## 原理
+以手机号138xxxx0000为例.xxxx是中间四位,可以根据地域信息确认.最后四位是随机值
+![pAj9iqI.png](https://www.qqzeng-ip.com/res/phone-hf-new.webp)
+[数据源](https://www.qqzeng.com/article/phone.html)
+[mysql数据](https://github.com/dannyhu926/phone_location)
+
+mysql数据源 city_code 是有问题的, 转换[参考](https://github.com/pzx521521/parap-tool/blob/master/public/compare.go)
+mysql数据源 转换为json [参考](https://github.com/pzx521521/parap-tool/blob/master/public/convert.go)
+

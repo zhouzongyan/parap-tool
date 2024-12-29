@@ -361,20 +361,20 @@ onMounted(() => {
 .phone-number {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 15px;
 }
 
 h1 {
     text-align: center;
     color: var(--c-text-1);
-    margin-bottom: 20px;
-    font-size: 1.8em;
+    margin-bottom: 15px;
+    font-size: 1.5em;
 }
 
 .container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    gap: 15px;
 }
 
 /* 在窄屏幕上切换为单列 */
@@ -386,7 +386,7 @@ h1 {
 
 .card {
     background: var(--c-bg);
-    padding: 20px;
+    padding: 15px;
     border-radius: 15px;
     box-shadow: var(--vt-shadow-2);
     border: 1px solid var(--c-divider);
@@ -395,23 +395,23 @@ h1 {
 
 h3 {
     color: var(--c-text-1);
-    margin-bottom: 15px;
-    font-size: 1.3em;
+    margin-bottom: 12px;
+    font-size: 1.1em;
 }
 
 .input-section {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 8px;
+    margin-bottom: 15px;
 }
 
 .phone-input {
     flex: 1;
-    padding: 12px;
+    padding: 8px 12px;
     border: 1px solid var(--c-divider);
     max-width: 150px;
     border-radius: 8px;
-    font-size: 1em;
+    font-size: 0.9em;
     background: var(--c-bg);
     color: var(--c-text-1);
 }
@@ -422,13 +422,14 @@ h3 {
 }
 
 button {
-    padding: 12px 25px;
+    padding: 8px 20px;
     background: var(--c-blue);
     color: var(--c-white);
     border: none;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
+    font-size: 0.9em;
 }
 
 button:hover {
@@ -442,9 +443,11 @@ button:disabled {
 
 .result-section {
     background: var(--c-bg-soft);
-    padding: 15px;
+    padding: 12px;
     border-radius: 8px;
     border: 1px solid var(--c-divider);
+    margin-top: 12px;
+    font-size: 0.9em;
 }
 
 .result-item {
@@ -468,16 +471,16 @@ button:disabled {
 
 .region-section {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 8px;
+    margin-bottom: 15px;
 }
 
 .region-select {
     flex: 1;
-    padding: 12px;
+    padding: 8px;
     border: 1px solid var(--c-divider);
     border-radius: 8px;
-    font-size: 1em;
+    font-size: 0.9em;
     background: var(--c-bg);
     color: var(--c-text-1);
     cursor: pointer;
@@ -495,12 +498,13 @@ button:disabled {
 
 .zipcode-section {
     background: var(--c-bg-soft);
-    padding: 12px;
+    padding: 8px 12px;
     border-radius: 8px;
     border: 1px solid var(--c-divider);
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     display: flex;
     gap: 10px;
+    font-size: 0.9em;
 }
 
 .zipcode-section .label {
@@ -568,17 +572,18 @@ button:disabled {
 .result-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
-    max-height: 300px;
+    gap: 8px;
+    max-height: 250px;
     overflow-y: auto;
 }
 
 .result-item {
-    padding: 8px;
+    padding: 6px;
     background: var(--c-bg);
     border: 1px solid var(--c-divider);
     border-radius: 4px;
     text-align: center;
     color: var(--c-text-1);
+    font-size: 0.9em;
 }
 </style>
