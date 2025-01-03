@@ -75,6 +75,8 @@
 import { ref } from 'vue'
 import FileUpload from '@/components/FileUpload.vue'
 import Btn from '@/components/Btn.vue'
+import { getHostName, downloadFile } from '@/utils/dev'
+
 // 状态管理
 const activeInput = ref('url')
 const webviewUrl = ref('')
@@ -99,6 +101,16 @@ const handleZipSelected = (file: File) => {
     zipFile.value = file
 }
 
+// 格式化URL
+const formatUrl = (url: string) => {
+    if (!url) return url
+    // 如果没有协议前缀，添加 https://
+    if (!url.match(/^https?:\/\//i)) {
+        return `https://${url}`
+    }
+    return url
+}
+
 // 生成APK
 const generateApk = async () => {
     if (!validateInputs()) {
@@ -108,46 +120,40 @@ const generateApk = async () => {
     isGenerating.value = true
     try {
         const formData = new FormData()
-        const requestData: any = {
-            manifest: {
-                version_code: apkInfo.value.versionCode,
-                version_name: apkInfo.value.versionName,
-                label: apkInfo.value.label,
-                package: 'com.example.webview'
-            }
-        }
 
-        // 根据不同的输入类型设置内容
-        if (activeInput.value === 'url') {
-            requestData.url = webviewUrl.value
-        } else if (activeInput.value === 'html') {
-            requestData.index_html = new TextEncoder().encode(htmlContent.value)
+        // 添加 manifest 信息
+        formData.append('manifest', JSON.stringify({
+            version_code: apkInfo.value.versionCode,
+            version_name: apkInfo.value.versionName,
+            label: apkInfo.value.label,
+            package: 'com.example.webview'
+        }))
+
+        // 只添加当前激活标签的内容
+        if (activeInput.value === 'url' && webviewUrl.value) {
+            formData.append('url', formatUrl(webviewUrl.value))
+        } else if (activeInput.value === 'html' && htmlContent.value) {
+            const htmlFile = new File([htmlContent.value], 'index.html', {
+                type: 'text/html'
+            })
+            formData.append('html_file', htmlFile)
         } else if (activeInput.value === 'zip' && zipFile.value) {
-            requestData.html_zip = new Uint8Array(await zipFile.value.arrayBuffer())
+            formData.append('zip_file', zipFile.value)
+        } else {
+            throw new Error('No valid content selected')
         }
 
-        const response = await fetch('/tool/html2apk', {
+        const response = await fetch(`${getHostName()}/tool/html2apk`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
+            body: formData
         })
 
         if (!response.ok) {
             throw new Error('APK generation failed')
         }
 
-        // 下载生成的APK
         const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'webview.apk'
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
+        downloadFile(blob, 'webview.apk')
 
     } catch (error) {
         console.error('APK generation failed:', error)
@@ -164,9 +170,13 @@ const validateInputs = () => {
         return false
     }
 
-    if (activeInput.value === 'url' && !webviewUrl.value) {
-        alert('请输入网址')
-        return false
+    if (activeInput.value === 'url') {
+        if (!webviewUrl.value) {
+            alert('请输入网址')
+            return false
+        }
+        // 自动修正 URL
+        webviewUrl.value = formatUrl(webviewUrl.value)
     }
 
     if (activeInput.value === 'html' && !htmlContent.value) {

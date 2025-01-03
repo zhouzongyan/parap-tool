@@ -36,20 +36,19 @@
 import { computed, ref } from 'vue'
 import Btn from "@/components/Btn.vue";
 import Collapsible from "@/components/Collapsible.vue";
+import { isDev, getHostName, downloadFile } from '@/utils/dev'
 
 const userName = ref('')
 const boardName = ref('')
 const loading = ref(false)
 const showClipboard = ref(false)
 const data = ref({})
-const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+
 if (isDev) {
   userName.value = 'parapeng'
   boardName.value = 'wallpaper2'
 }
-const hostName = (() => {
-  return isDev ? '' : 'https://r.parap.us.kg'
-})
+
 const handleClipboard = (async () => {
   try {
     const images = data.value.flatMap(item => item.images || []);
@@ -60,16 +59,18 @@ const handleClipboard = (async () => {
     alert('无法复制文本，请尝试其他方法。');
   }
 });
+
 const handleSubmit = () => {
   if (userName.value === "") {
     return
   }
   getInfo()
 }
+
 async function getInfo() {
   try {
     loading.value = true
-    const response = await fetch(hostName() + "/tool/pinterest", {
+    const response = await fetch(`${getHostName()}/tool/pinterest`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -78,23 +79,24 @@ async function getInfo() {
         userName: userName.value,
         boardName: boardName.value
       }).toString()
-    });
+    })
+
     if (response.ok) {
-      const res = await response.json();
-      data.value = res.boardImages;
+      const res = await response.json()
+      data.value = res.boardImages
       showClipboard.value = true
     }
   } catch (error) {
-    console.error('Fetch error:', error);
+    console.error('Fetch error:', error)
   } finally {
     loading.value = false
   }
 }
+
 const downloadZip = async () => {
   try {
     loading.value = true
-    // 发起 GET 请求到后端下载 ZIP 文件
-    const response = await fetch(hostName() + "/tool/pinterest", {
+    const response = await fetch(`${getHostName()}/tool/pinterest`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -104,27 +106,21 @@ const downloadZip = async () => {
         boardName: boardName.value,
         download: true
       })
-    }); if (!response.ok) {
-      throw new Error('下载失败');
+    })
+
+    if (!response.ok) {
+      throw new Error('下载失败')
     }
-    // 获取 ZIP 文件的 Blob 数据
-    const blob = await response.blob();
-    // 创建一个临时 URL 并触发下载
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = userName.value + ".zip"; // 设置下载文件名
-    document.body.appendChild(a);
-    a.click();
-    // 释放 URL 对象
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+
+    const blob = await response.blob()
+    downloadFile(blob, `${userName.value}.zip`)
+
   } catch (error) {
-    console.error('下载 ZIP 失败:', error);
+    console.error('下载 ZIP 失败:', error)
   } finally {
     loading.value = false
   }
-};
+}
 </script>
 
 <style scoped>
