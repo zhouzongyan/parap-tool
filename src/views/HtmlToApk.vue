@@ -126,7 +126,7 @@ const generateApk = async () => {
             version_code: apkInfo.value.versionCode,
             version_name: apkInfo.value.versionName,
             label: apkInfo.value.label,
-            package: 'com.example.webview'
+            package: ''
         }))
 
         // 只添加当前激活标签的内容
