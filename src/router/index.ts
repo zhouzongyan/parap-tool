@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Pinterest from '@/views/Pinterest.vue';
 import ImageData from '@/views/ImageData.vue';
 import PhoneNumber from '@/views/PhoneNumber.vue';
+import HtmlToApk from '@/views/HtmlToApk.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,6 +21,11 @@ const router = createRouter({
       path: '/phone-number',
       name: 'phone-number',
       component: PhoneNumber,
+    },
+    {
+      path: '/html-to-apk',
+      name: 'html-to-apk',
+      component: HtmlToApk
     }
   ],
 })
