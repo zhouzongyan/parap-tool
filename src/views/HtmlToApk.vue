@@ -68,6 +68,7 @@
                 {{ isGenerating ? '生成中...' : '生成APK' }}
             </Btn>
         </div>
+        <Alert ref="alertRef" />
     </div>
 </template>
 
@@ -76,6 +77,7 @@ import { ref } from 'vue'
 import FileUpload from '@/components/FileUpload.vue'
 import Btn from '@/components/Btn.vue'
 import { getHostName, downloadFile } from '@/utils/dev'
+import Alert from '@/components/Alert.vue'
 
 // 状态管理
 const activeInput = ref('url')
@@ -90,6 +92,9 @@ const apkInfo = ref({
     versionCode: 1,
     versionName: '1.0.0'
 })
+
+// 添加 alert 组件引用
+const alertRef = ref()
 
 // 切换输入类型
 const switchInput = (type: 'url' | 'html' | 'zip') => {
@@ -142,8 +147,8 @@ const generateApk = async () => {
         } else {
             throw new Error('No valid content selected')
         }
-
-        const response = await fetch(`${getHostName()}/tool/html2apk`, {
+        const hostName = await getHostName()
+        const response = await fetch(`${hostName}/tool/html2apk`, {
             method: 'POST',
             body: formData
         })
@@ -151,13 +156,16 @@ const generateApk = async () => {
         if (!response.ok) {
             throw new Error('APK generation failed')
         }
-
-        const blob = await response.blob()
-        downloadFile(blob, 'webview.apk')
-
+        if (window.wvPort) {
+            const blob = await response.text()
+            alertRef.value.show(blob)
+        } else {
+            const blob = await response.blob()
+            downloadFile(blob, 'webview.apk')
+        }
     } catch (error) {
         console.error('APK generation failed:', error)
-        alert('APK生成失败！')
+        alertRef.value.show('APK生成失败！')
     } finally {
         isGenerating.value = false
     }
@@ -166,26 +174,25 @@ const generateApk = async () => {
 // 验证输入
 const validateInputs = () => {
     if (!apkInfo.value.label) {
-        alert('请输入软件名称')
+        alertRef.value.show('请输入软件名称')
         return false
     }
 
     if (activeInput.value === 'url') {
         if (!webviewUrl.value) {
-            alert('请输入网址')
+            alertRef.value.show('请输入网址')
             return false
         }
-        // 自动修正 URL
         webviewUrl.value = formatUrl(webviewUrl.value)
     }
 
     if (activeInput.value === 'html' && !htmlContent.value) {
-        alert('请输入HTML源码')
+        alertRef.value.show('请输入HTML源码')
         return false
     }
 
     if (activeInput.value === 'zip' && !zipFile.value) {
-        alert('请选择ZIP文件')
+        alertRef.value.show('请选择ZIP文件')
         return false
     }
 

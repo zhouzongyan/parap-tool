@@ -1,17 +1,42 @@
 import { fileURLToPath, URL } from 'node:url'
-
+import { viteSingleFile } from "vite-plugin-singlefile"
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
+
+// 获取命令行参数
+const args = process.argv.slice(2);
+
+// 解析参数为对象
+const customParams = args.reduce((acc, arg) => {
+  const [key, value] = arg.split('=');
+  if (key && value) {
+    acc[key.replace(/^--/, '')] = value;
+  }
+  return acc;
+}, {});
+const defineConstants = Object.fromEntries(
+  Object.entries(customParams).map(([key, value]) => [
+    `__${key.toUpperCase()}__`,
+    JSON.stringify(value),
+  ])
+);
 // https://vite.dev/config/
 export default defineConfig({
+  define: defineConstants,
   plugins: [
     vue(),
+    customParams.singlefile !== "" ? viteSingleFile() : null
   ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
+  },
+  build: {
+    // 设置输出目录
+    // outDir: '/Users/parapeng/Desktop/apkEditor/app/html/dist',
+    // emptyOutDir: true,
   },
   server: {
     proxy: {

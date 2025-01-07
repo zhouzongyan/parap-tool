@@ -1,11 +1,11 @@
 <template>
     <div class="file-upload-wrapper" @drop.prevent="handleDrop" @dragover.prevent @dragenter.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false" :class="{ 'dragging': isDragging }">
-        <label class="file-upload-label" :for="inputId">
+        <label class="file-upload-label">
             <div class="upload-icon">{{ icon }}</div>
             <div>{{ placeholder }}</div>
         </label>
-        <input :id="inputId" type="file" :accept="accept" @change="handleFileChange" style="display: none;">
+        <input type="file" :accept="accept" @change="handleFileChange" style="display: none;">
         <div class="file-name" v-if="modelValue">{{ modelValue }}</div>
     </div>
 </template>
@@ -15,7 +15,6 @@ import { ref } from 'vue'
 
 const props = defineProps<{
     modelValue: string
-    inputId: string
     accept?: string
     placeholder?: string
     icon?: string

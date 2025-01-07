@@ -2,7 +2,12 @@
 export const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
 
 // 获取主机名
-export const getHostName = () => {
+export const getHostName = async (): Promise<string> => {
+    if (window.wvPort) {
+        const port = await window.wvPort()
+        console.log(port)
+        return port
+    }
     return isDev ? '' : 'https://r.parap.us.kg'
 }
 
