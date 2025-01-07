@@ -8,25 +8,22 @@ import vue from '@vitejs/plugin-vue'
 const args = process.argv.slice(2);
 
 // 解析参数为对象
-const customParams = args.reduce((acc, arg) => {
+const CUSTOMPARAMS = args.reduce((acc, arg) => {
   const [key, value] = arg.split('=');
   if (key && value) {
     acc[key.replace(/^--/, '')] = value;
   }
   return acc;
 }, {});
-const defineConstants = Object.fromEntries(
-  Object.entries(customParams).map(([key, value]) => [
-    `__${key.toUpperCase()}__`,
-    JSON.stringify(value),
-  ])
-);
+
 // https://vite.dev/config/
 export default defineConfig({
-  define: defineConstants,
+  define: {
+    CUSTOMPARAMS: JSON.stringify(CUSTOMPARAMS || {}),
+  },
   plugins: [
     vue(),
-    customParams.singlefile !== "" ? viteSingleFile() : null
+    CUSTOMPARAMS.singlefile !== "" ? viteSingleFile() : null
   ],
   resolve: {
     alias: {

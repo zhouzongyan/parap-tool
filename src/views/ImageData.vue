@@ -5,8 +5,8 @@
             <!-- 写入数据卡片 -->
             <div class="card">
                 <h3>写入数据</h3>
-                <FileUpload ref="imageUploadRef" v-model="imageFileName" input-id="imageInput" accept="image/*"
-                    placeholder="选择图片文件或拖拽至此" icon="📁" @file-selected="handleImageSelected" />
+                <FileUpload ref="imageUploadRef" v-model="imageFileName" accept="image/*" placeholder="选择图片文件或拖拽至此"
+                    icon="📁" @file-selected="handleImageSelected" />
                 <div class="data-input-section">
                     <div class="input-tabs">
                         <button class="tab-btn" :class="{ active: activeDataInput === 'text' }"
@@ -24,8 +24,8 @@
                             placeholder="输入要隐藏的数据..."></textarea>
                     </div>
                     <div id="fileInput" class="input-panel" :class="{ active: activeDataInput === 'file' }">
-                        <FileUpload ref="dataUploadRef" v-model="dataFileName" input-id="dataFileInput"
-                            placeholder="选择数据文件或拖拽至此" icon="📄" @file-selected="handleDataFileSelected" />
+                        <FileUpload ref="dataUploadRef" v-model="dataFileName" placeholder="选择数据文件或拖拽至此" icon="📄"
+                            @file-selected="handleDataFileSelected" />
                     </div>
                 </div>
                 <div class="checkbox-wrapper">
@@ -50,9 +50,8 @@
                         </button>
                     </div>
                     <div id="fileImageInput" class="input-panel" :class="{ active: activeImageInput === 'file' }">
-                        <FileUpload ref="readImageUploadRef" v-model="readImageFileName" input-id="readImageInput"
-                            accept="image/*" placeholder="选择图片文件或拖拽至此" icon="📁"
-                            @file-selected="handleReadImageSelected" />
+                        <FileUpload ref="readImageUploadRef" v-model="readImageFileName" accept="image/*"
+                            placeholder="选择图片文件或拖拽至此" icon="📁" @file-selected="handleReadImageSelected" />
                     </div>
                     <div id="urlImageInput" class="input-panel" :class="{ active: activeImageInput === 'url' }">
                         <input type="text" v-model="imageUrl" placeholder="输入图片URL..." class="url-input"

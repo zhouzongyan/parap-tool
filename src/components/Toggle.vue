@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
+import { defineEmits } from 'vue'
 
 const props = defineProps({
   toggleValue: { type: Boolean, default: false },
@@ -26,16 +26,18 @@ const toggle = () => {
 </script>
 
 <style>
-
-
 .toggle-button {
   margin: 0 2px;
   padding: 6px 12px;
   font-size: 18px;
-  border: none; /* 去掉边框 */
-  border-radius: 8px; /* 圆角效果 */
-  cursor: pointer; /* 鼠标指针样式 */
-  transition: background-color 0.3s, transform 0.2s; /* 动画效果 */
+  border: none;
+  /* 去掉边框 */
+  border-radius: 8px;
+  /* 圆角效果 */
+  cursor: pointer;
+  /* 鼠标指针样式 */
+  transition: background-color 0.3s, transform 0.2s;
+  /* 动画效果 */
 }
 
 .toggle-button:hover {
@@ -43,9 +45,11 @@ const toggle = () => {
 }
 
 .toggle-button:active {
-  transform: scale(0.95); /* 按下时缩小效果 */
+  transform: scale(0.95);
+  /* 按下时缩小效果 */
 }
-.toggle-container{
+
+.toggle-container {
   white-space: nowrap;
 }
 </style>

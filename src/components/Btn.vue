@@ -1,15 +1,14 @@
 <template>
-  <button
-      :class="['btn', variant, { loading }]"
-      :disabled="loading"
-  >
+  <button :class="['btn', variant, { loading }]" :disabled="loading">
     <span v-if="loading" class="spinner"></span>
-    <span><slot></slot></span>
+    <span>
+      <slot></slot>
+    </span>
   </button>
 </template>
 
 <script setup>
-import { ref, defineProps } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps({
   loading: {
@@ -51,14 +50,20 @@ const props = defineProps({
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .btn:hover {
   opacity: 0.8;
 }
-.btn:disabled{
+
+.btn:disabled {
   opacity: 0.7;
 }
 </style>

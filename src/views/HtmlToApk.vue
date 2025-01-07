@@ -26,8 +26,8 @@
                 </div>
 
                 <div class="input-panel" :class="{ active: activeInput === 'zip' }">
-                    <FileUpload ref="zipUploadRef" v-model="zipFileName" input-id="zipInput" accept=".zip"
-                        placeholder="选择ZIP文件或拖拽至此" icon="📦" @file-selected="handleZipSelected" />
+                    <FileUpload ref="zipUploadRef" v-model="zipFileName" accept=".zip" placeholder="选择ZIP文件或拖拽至此"
+                        icon="📦" @file-selected="handleZipSelected" />
                 </div>
             </div>
 

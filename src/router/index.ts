@@ -32,15 +32,15 @@ const routes = [
     component: QRMerge
   }
 ]
-if (__SINGLEFILE__) {
+if (CUSTOMPARAMS.singlefile) {
   routes.push({
     path: '/',
-    redirect: '/' + __SINGLEFILE__
+    redirect: '/' + CUSTOMPARAMS.singlefile
   })
 }
 
 const router = createRouter({
-  history: __SINGLEFILE__ ? createWebHashHistory() : createWebHistory(import.meta.env.BASE_URL),
+  history: CUSTOMPARAMS.singlefile ? createWebHashHistory() : createWebHistory(import.meta.env.BASE_URL),
   routes: routes,
 })
 export default router
