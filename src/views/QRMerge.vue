@@ -2,21 +2,27 @@
     <div class="qr-merge">
         <h1>二维码合并工具</h1>
         <div class="container">
-            <div class="controls">
-                <div class="control-group">
-                    <label>二维码大小</label>
-                    <input type="range" v-model="qrSize_power" min="6" max="12" step="1" />
-                    <span>{{ qrSize }}px</span>
-                </div>
 
-                <div v-if="false" class="control-group">
-                    <label>位置调整</label>
-                    <div class="position-controls">
-                        <input type="number" v-model="qrPosition.x" placeholder="X坐标" />
-                        <input type="number" v-model="qrPosition.y" placeholder="Y坐标" />
+            <div class="control-group-container">
+                <div class="control-panel">
+                    <div class="control-group">
+                        <label>二维码大小</label>
+                        <div class="size-controls">
+                            <input type="range" v-model="qrSize_power" min="6" max="12" step="1" />
+                            <span>{{ qrSize }}px</span>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <div v-if="false" class="control-group">
+                <label>位置调整</label>
+                <div class="position-controls">
+                    <input type="number" v-model="qrPosition.x" placeholder="X坐标" />
+                    <input type="number" v-model="qrPosition.y" placeholder="Y坐标" />
+                </div>
+            </div>
+
             <div class="upload-section">
                 <div class="upload-card">
                     <h3>支付宝收款码</h3>
@@ -54,6 +60,25 @@
             </div>
 
 
+            <div class="control-panel">
+                <div class="control-group">
+                    <label>支付宝清除区域</label>
+                    <div class="clear-controls">
+                        <select v-model="clearDirection">
+                            <option value="vertical">纵向</option>
+                            <option value="horizontal">横向</option>
+                        </select>
+                        <select v-model="clearMode">
+                            <option value="outside-in">从外到里</option>
+                            <option value="inside-out">从里到外</option>
+                        </select>
+                        <div class="range-with-value">
+                            <input type="range" v-model="clearRatio" min="0" max="1" step="0.1" />
+                            <span>{{ (clearRatio * 100).toFixed(0) }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="result-section" v-if="bgImagePreview && qrImagePreview">
                 <h3>预览效果</h3>
@@ -96,6 +121,9 @@ const canMerge = ref(false)
 const alipayQrContent = ref('')
 const wechatQrContent = ref('')
 
+const clearDirection = ref<'vertical' | 'horizontal'>('horizontal')
+const clearRatio = ref(0.5)
+const clearMode = ref<'outside-in' | 'inside-out'>('inside-out')
 
 const qrSize = computed(() => Math.pow(2, qrSize_power.value));
 // 解析二维码内容
@@ -196,10 +224,43 @@ const updateCanvasPreview = async () => {
                 if (tempCtx) {
                     // 绘制原始支付宝二维码
                     tempCtx.drawImage(alipayQrCanvas, 0, 0, alipayPicWidth, alipayPicWidth)
-                    const clearHeight = alipayPicWidth / 2 / 2
-                    // 清除右下角1/4区域
-                    tempCtx.clearRect(alipayPicWidth / 2 + clearHeight, alipayPicWidth / 2,
-                        alipayPicWidth / 2 - clearHeight, alipayPicWidth / 2)
+
+                    // 根据方向和比例计算清除区域
+                    if (clearDirection.value === 'vertical') {
+                        const clearWidth = alipayPicWidth / 2 * clearRatio.value
+                        if (clearMode.value === 'outside-in') {
+                            tempCtx.clearRect(
+                                alipayPicWidth / 2,
+                                alipayPicWidth / 2,
+                                clearWidth,
+                                alipayPicWidth / 2
+                            )
+                        } else {
+                            tempCtx.clearRect(
+                                alipayPicWidth - clearWidth,
+                                alipayPicWidth / 2,
+                                clearWidth,
+                                alipayPicWidth / 2
+                            )
+                        }
+                    } else {
+                        const clearHeight = alipayPicWidth / 2 * clearRatio.value
+                        if (clearMode.value === 'outside-in') {
+                            tempCtx.clearRect(
+                                alipayPicWidth / 2,
+                                alipayPicWidth / 2,
+                                alipayPicWidth / 2,
+                                clearHeight
+                            )
+                        } else {
+                            tempCtx.clearRect(
+                                alipayPicWidth / 2,
+                                alipayPicWidth - clearHeight,
+                                alipayPicWidth / 2,
+                                clearHeight
+                            )
+                        }
+                    }
 
                     // 保存当前状态
                     ctx.save()
@@ -251,6 +312,10 @@ const mergePictures = () => {
 }
 
 watch([qrSize, qrPosition], () => {
+    updateCanvasPreview()
+})
+
+watch([clearDirection, clearRatio, clearMode], () => {
     updateCanvasPreview()
 })
 
@@ -309,9 +374,65 @@ h1 {
     gap: 15px;
 }
 
+.control-group-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.control-panel {
+    background: var(--c-bg-soft);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--c-divider);
+}
+
 .control-group {
     display: grid;
-    gap: 8px;
+    gap: 10px;
+}
+
+.size-controls,
+.clear-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.size-controls input {
+    flex: 1;
+}
+
+.size-controls span {
+    min-width: 4em;
+    text-align: right;
+}
+
+.clear-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.clear-controls select {
+    width: 100px;
+    flex-shrink: 0;
+}
+
+.range-with-value {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.range-with-value input {
+    flex: 1;
+}
+
+.range-with-value span {
+    min-width: 3em;
+    text-align: right;
 }
 
 .position-controls {
@@ -453,5 +574,39 @@ canvas {
 /* 确保预览图片区域始终显示 */
 .preview-image {
     z-index: 0;
+}
+
+.clear-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.clear-controls select {
+    width: 100px;
+    /* 固定选择框宽度 */
+    flex-shrink: 0;
+    /* 防止压缩 */
+}
+
+.range-with-value {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.range-with-value input {
+    flex: 1;
+}
+
+.range-with-value span {
+    min-width: 3em;
+    text-align: right;
+}
+
+/* 确保两个选择框的样式一致 */
+.clear-controls select+select {
+    margin-left: 10px;
 }
 </style>

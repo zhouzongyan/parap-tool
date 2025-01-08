@@ -55,13 +55,13 @@ mysql数据源 转换为json [参考](https://github.com/pzx521521/parap-tool/bl
 # 支付宝和微信收款码二合一(图层合并)
 
 网上看了一下,居然没有**开源免费**通过图层合并实现的.纯前端项目
-
+[![pE9TGGQ.png](https://s21.ax1x.com/2025/01/07/pE9TGGQ.png)](https://imgse.com/i/pE9TGGQ)
 [在线demo](https://tool.parap.us.kg/qr-merge)
 
 html:  
 https://wwtw.lanzouq.com/iTAhH2k8rx3e
 
-[源码](https://github.com/pzx521521/parap-tool))
+[源码](https://github.com/pzx521521/parap-tool)
 
 主要合并方式实现有三种：
 
@@ -107,7 +107,7 @@ https://wwtw.lanzouq.com/iTAhH2k8rx3e
 
 
 ## 二维码合并
-
+[![pE9TYxs.png](https://s21.ax1x.com/2025/01/07/pE9TYxs.png)](https://imgse.com/i/pE9TYxs)
 ### 原理
 通过二维码的纠错机制,即使有一部分二维码被覆盖,也能正确解析.
 
@@ -144,6 +144,6 @@ https://wwtw.lanzouq.com/iTAhH2k8rx3e
 | 方式                | 实现复杂度 | 安全性      | 费率 | 多平台            | 其他          |
 |---------------------|------------|------------|----------|---------------------|---------------------|
 | UA 判断             | 较简单      | 低         | 无       | 支持多个        | 微信不能直接拉起,需长按识别 |
-| 图片合并            | 简单       | 低         | 无       | 仅支持2个     | 微信极少数情况下会打开支付宝的链接 |
+| 图片合并            | 简单       | 高         | 无       | 仅支持2个     | 微信极少数情况下会打开支付宝的链接 |
 | 第三方支付平台  | 较复杂     | 看第三方信誉    | 有       | 支持很多(比如直接银行卡) | 没有任何问题 |
 
