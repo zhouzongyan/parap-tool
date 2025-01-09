@@ -4,6 +4,7 @@ import ImageData from '@/views/ImageData.vue';
 import PhoneNumber from '@/views/PhoneNumber.vue';
 import HtmlToApk from '@/views/HtmlToApk.vue'
 import QRMerge from '@/views/QRMerge.vue'
+import HtmlToExe from '@/views/HtmlToExe.vue'
 
 const routes = [
   {
@@ -30,6 +31,11 @@ const routes = [
     path: '/qr-merge',
     name: 'qr-merge',
     component: QRMerge
+  },
+  {
+    path: '/html-to-exe',
+    name: 'html-to-exe',
+    component: HtmlToExe
   }
 ]
 if (CUSTOMPARAMS.singlefile) {

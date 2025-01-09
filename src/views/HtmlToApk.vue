@@ -2,68 +2,44 @@
     <div class="html-to-apk">
         <h1>HTML转APK工具</h1>
         <div class="container">
-            <!-- WebView内容输入 -->
-            <div class="card">
-                <h3>WebView内容</h3>
-                <div class="input-tabs">
-                    <button class="tab-btn" :class="{ active: activeInput === 'url' }" @click="switchInput('url')">
-                        网址
-                    </button>
-                    <button class="tab-btn" :class="{ active: activeInput === 'html' }" @click="switchInput('html')">
-                        HTML源码
-                    </button>
-                    <button class="tab-btn" :class="{ active: activeInput === 'zip' }" @click="switchInput('zip')">
-                        压缩包
-                    </button>
-                </div>
-
-                <div class="input-panel" :class="{ active: activeInput === 'url' }">
-                    <input type="text" v-model="webviewUrl" placeholder="请输入网址" class="input-field">
-                </div>
-
-                <div class="input-panel" :class="{ active: activeInput === 'html' }">
-                    <textarea v-model="htmlContent" placeholder="请输入HTML源码" class="input-field textarea"></textarea>
-                </div>
-
-                <div class="input-panel" :class="{ active: activeInput === 'zip' }">
-                    <FileUpload ref="zipUploadRef" v-model="zipFileName" accept=".zip" placeholder="选择ZIP文件或拖拽至此"
-                        icon="📦" @file-selected="handleZipSelected" />
-                </div>
-            </div>
-
-            <!-- APK信息输入 -->
-            <div class="card">
-                <h3>APK信息</h3>
-                <div class="form-container">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>软件名称 (label)</label>
-                            <div class="input-group">
-                                <input type="text" v-model="apkInfo.label" placeholder="请输入软件名称" class="input-field">
-                                <span class="field-desc">对应 application.label，用于显示软件名</span>
+            <WebviewForm v-model="activeInput" v-model:url="webviewUrl" v-model:html="htmlContent"
+                v-model:zipName="zipFileName" @zip-selected="handleZipSelected">
+                <!-- APK配置部分 -->
+                <div class="card">
+                    <h3>APK信息</h3>
+                    <div class="form-container">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>软件名称 (label)</label>
+                                <div class="input-group">
+                                    <input type="text" v-model="apkInfo.label" placeholder="请输入软件名称"
+                                        class="input-field">
+                                    <span class="field-desc">对应 application.label，用于显示软件名</span>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <label>版本号 (versionCode)</label>
-                            <div class="input-group">
-                                <input type="number" v-model="apkInfo.versionCode" placeholder="请输入版本号"
-                                    class="input-field">
-                                <span class="field-desc">对应 manifest.android:versionCode，用于更新软件</span>
+                            <div class="form-group">
+                                <label>版本号 (versionCode)</label>
+                                <div class="input-group">
+                                    <input type="number" v-model="apkInfo.versionCode" placeholder="请输入版本号"
+                                        class="input-field">
+                                    <span class="field-desc">对应 manifest.android:versionCode，用于更新软件</span>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <label>版本名称 (versionName)</label>
-                            <div class="input-group">
-                                <input type="text" v-model="apkInfo.versionName" placeholder="请输入版本名称"
-                                    class="input-field">
-                                <span class="field-desc">对应 manifest.android:versionName，用于显示软件版本号</span>
+                            <div class="form-group">
+                                <label>版本名称 (versionName)</label>
+                                <div class="input-group">
+                                    <input type="text" v-model="apkInfo.versionName" placeholder="请输入版本名称"
+                                        class="input-field">
+                                    <span class="field-desc">对应 manifest.android:versionName，用于显示软件版本号</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </WebviewForm>
+
             <Btn @click="generateApk" :loading="isGenerating">
                 {{ isGenerating ? '生成中...' : '生成APK' }}
             </Btn>
@@ -74,7 +50,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import FileUpload from '@/components/FileUpload.vue'
+import WebviewForm from '@/components/WebviewForm.vue'
 import Btn from '@/components/Btn.vue'
 import { getHostName, downloadFile } from '@/utils/dev'
 import Alert from '@/components/Alert.vue'
@@ -109,8 +85,9 @@ const handleZipSelected = (file: File) => {
 // 格式化URL
 const formatUrl = (url: string) => {
     if (!url) return url
-    // 如果没有协议前缀，添加 https://
-    if (!url.match(/^https?:\/\//i)) {
+    url = url.trim()
+    // 如果是相对路径或者没有协议前缀，添加 https://
+    if (!url.match(/^[a-zA-Z]+:\/\//)) {
         return `https://${url}`
     }
     return url
@@ -198,6 +175,10 @@ const validateInputs = () => {
 
     return true
 }
+
+const updateConfig = (newConfig: Partial<typeof apkInfo.value>) => {
+    apkInfo.value = { ...apkInfo.value, ...newConfig }
+}
 </script>
 
 <style scoped>
@@ -212,84 +193,20 @@ const validateInputs = () => {
     gap: 15px;
 }
 
-.card {
-    background: var(--c-bg);
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid var(--c-divider);
-}
-
-h1 {
-    font-size: 1.5em;
-    margin-bottom: 15px;
-    text-align: center;
-}
-
-h3 {
-    font-size: 1.1em;
-    margin-bottom: 12px;
-}
-
-.input-tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 15px;
-}
-
-.tab-btn {
-    flex: 1;
-    padding: 8px;
-    background: var(--c-bg-soft);
-    border: 1px solid var(--c-divider);
-    border-radius: 4px;
-    cursor: pointer;
-    color: var(--c-text-1);
-}
-
-.tab-btn.active {
-    background: var(--c-blue);
-    color: var(--c-white);
-    border-color: var(--c-blue);
-}
-
-.input-panel {
-    display: none;
-}
-
-.input-panel.active {
-    display: block;
-}
-
-.input-field {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid var(--c-divider);
-    border-radius: 4px;
-    background: var(--c-bg);
-    color: var(--c-text-1);
-    font-size: 0.9em;
-}
-
-.textarea {
-    height: 200px;
-    resize: vertical;
-}
-
+/* 添加配置表单样式 */
 .form-container {
     padding: 0 15px;
 }
 
 .form-row {
     display: flex;
-    gap: 20px;
+    gap: 15px;
     justify-content: space-between;
 }
 
 .form-group {
     flex: 1;
     min-width: 0;
-    /* 防止flex项溢出 */
-    max-width: 250px;
 }
 
 .form-group label {
@@ -303,10 +220,6 @@ h3 {
     width: 100%;
 }
 
-.input-field {
-    width: 100%;
-}
-
 .field-desc {
     display: block;
     font-size: 0.8em;
@@ -314,35 +227,10 @@ h3 {
     margin-top: 4px;
 }
 
-/* 响应式布局 */
 @media (max-width: 768px) {
     .form-row {
         flex-direction: column;
         gap: 15px;
     }
-
-    .form-group {
-        max-width: none;
-    }
-}
-
-button {
-    width: 100%;
-    padding: 12px;
-    background: var(--c-blue);
-    color: var(--c-white);
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1em;
-}
-
-button:disabled {
-    background: var(--c-gray-3);
-    cursor: not-allowed;
-}
-
-.actions {
-    text-align: center;
 }
 </style>

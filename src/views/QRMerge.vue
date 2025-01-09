@@ -294,18 +294,37 @@ const updateCanvasPreview = async () => {
     bgImage.src = bgImagePreview.value
 }
 
+const handleDownload = () => {
+    if (window.download) {
+        // 如果存在下载函数，则调用下载函数
+        previewCanvas.value.toBlob(async (blob) => {
+            if (blob) {
+                // 将 blob 转换为 base64
+                const reader = new FileReader()
+                reader.onloadend = async () => {
+                    const base64data = (reader.result as string).split(',')[1]
+                    const info = await window.download(base64data, 'merged_qr.png')
+                    alertRef.value.show(info)
+                }
+                reader.readAsDataURL(blob)
+            }
+        })
+        return
+    }
+
+    // 普通下载逻辑
+    const dataUrl = previewCanvas.value.toDataURL('image/png')
+    const link = document.createElement('a')
+    link.download = 'merged_qr.png'
+    link.href = dataUrl
+    link.click()
+}
+
 const mergePictures = () => {
     if (!previewCanvas.value) return
 
     try {
-        const dataUrl = previewCanvas.value.toDataURL('image/png')
-        const link = document.createElement('a')
-        // 使用支付宝用户名作为文件名的一部分（如果有的话）
-        const alipayInfo = alipayQrContent.value ? '_alipay' : ''
-        const wechatInfo = wechatQrContent.value ? '_wechat' : ''
-        link.download = `merged${alipayInfo}${wechatInfo}_qr.png`
-        link.href = dataUrl
-        link.click()
+        handleDownload()
     } catch (error) {
         alertRef.value.show('图片导出失败！')
     }

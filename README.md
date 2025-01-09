@@ -59,7 +59,7 @@ mysql数据源 转换为json [参考](https://github.com/pzx521521/parap-tool/bl
 [在线demo](https://tool.parap.us.kg/qr-merge)
 
 html:  
-https://wwtw.lanzouq.com/iTAhH2k8rx3e
+https://wwtw.lanzouq.com/iE6ow2kb0vgb
 
 [源码](https://github.com/pzx521521/parap-tool)
 
@@ -146,4 +146,56 @@ https://wwtw.lanzouq.com/iTAhH2k8rx3e
 | UA 判断             | 较简单      | 低         | 无       | 支持多个        | 微信不能直接拉起,需长按识别 |
 | 图片合并            | 简单       | 高         | 无       | 仅支持2个     | 微信极少数情况下会打开支付宝的链接 |
 | 第三方支付平台  | 较复杂     | 看第三方信誉    | 有       | 支持很多(比如直接银行卡) | 没有任何问题 |
+
+## 关键代码
+
+
+```
+
+            // 绘制支付宝二维码（旋转180度并裁剪）
+            const alipayPicWidth = qrSize.value / 2
+            if (alipayQrContent.value) {
+                const alipayQrCanvas = document.createElement('canvas')
+                await QRCode.toCanvas(alipayQrCanvas, alipayQrContent.value, {
+                    errorCorrectionLevel: 'H',
+                    margin: picMargin / 2,
+                    width: alipayPicWidth,
+                    color: {
+                        dark: '#000000',
+                        light: '#ffffff'
+                    }
+                })
+                // 创建临时画布来处理支付宝二维码
+                const tempCanvas = document.createElement('canvas')
+                tempCanvas.width = alipayPicWidth
+                tempCanvas.height = alipayPicWidth
+                const tempCtx = tempCanvas.getContext('2d')
+                if (tempCtx) {
+                    // 绘制原始支付宝二维码
+                    tempCtx.drawImage(alipayQrCanvas, 0, 0, alipayPicWidth, alipayPicWidth)
+                    const clearHeight = alipayPicWidth / 2 / 2
+                    // 清除右下角1/4区域
+                    tempCtx.clearRect(alipayPicWidth / 2 + clearHeight, alipayPicWidth / 2,
+                        alipayPicWidth / 2 - clearHeight, alipayPicWidth / 2)
+                    // 保存当前状态
+                    ctx.save()
+                    // 设置旋转中心点并旋转
+                    ctx.translate(qrPosition.value.x + alipayPicWidth / 2,
+                        qrPosition.value.y + alipayPicWidth / 2)
+                    ctx.rotate(Math.PI)
+                    ctx.translate(-(qrPosition.value.x + alipayPicWidth / 2),
+                        -(qrPosition.value.y + alipayPicWidth / 2))
+                    // 绘制处理后的支付宝二维码
+                    ctx.drawImage(tempCanvas,
+                        qrPosition.value.x,
+                        qrPosition.value.y,
+                        alipayPicWidth,
+                        alipayPicWidth
+                    )
+```
+## 更新
+
+有人反馈支付宝扫不出来 或者微信经常跳  
+现在添加3个参数供大家测试  
+目前感觉 横向+从里到外清除+清除50% 效果最好  
 

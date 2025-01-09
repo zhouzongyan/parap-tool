@@ -1,6 +1,5 @@
 // 判断是否为开发环境
 export const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-
 // 获取主机名
 export const getHostName = async (): Promise<string> => {
     if (window.wvPort) {
