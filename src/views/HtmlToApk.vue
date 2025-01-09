@@ -80,6 +80,7 @@ const switchInput = (type: 'url' | 'html' | 'zip') => {
 // 处理ZIP文件选择
 const handleZipSelected = (file: File) => {
     zipFile.value = file
+    zipFileName.value = file.name
 }
 
 // 格式化URL

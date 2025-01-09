@@ -115,6 +115,7 @@ const switchInput = (type: 'url' | 'html' | 'zip') => {
 // 处理ZIP文件选择
 const handleZipSelected = (file: File) => {
     zipFile.value = file
+    zipFileName.value = file.name
 }
 
 // 格式化URL
@@ -168,7 +169,7 @@ const generateExe = async (target: string) => {
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `${target}`
+        a.download = `${exeInfo.value.title}${target === 'webview.exe' ? '.exe' : ''}`
         document.body.appendChild(a)
         a.click()
         URL.revokeObjectURL(url)

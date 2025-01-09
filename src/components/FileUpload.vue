@@ -1,17 +1,20 @@
 <template>
     <div class="file-upload-wrapper" @drop.prevent="handleDrop" @dragover.prevent @dragenter.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false" :class="{ 'dragging': isDragging }">
-        <label class="file-upload-label">
+        <label class="file-upload-label" :for="inputId">
             <div class="upload-icon">{{ icon }}</div>
             <div>{{ placeholder }}</div>
         </label>
-        <input type="file" :accept="accept" @change="handleFileChange" style="display: none;">
+        <input type="file" :id="inputId" :accept="accept" @change="handleFileChange" style="display: none;">
         <div class="file-name" v-if="modelValue">{{ modelValue }}</div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+
+// 生成唯一ID
+const inputId = `file-upload-${Math.random().toString(36).substr(2, 9)}`
 
 const props = defineProps<{
     modelValue: string
@@ -32,7 +35,14 @@ const selectedFile = ref<File | null>(null)
 const handleDrop = (e: DragEvent) => {
     isDragging.value = false
     const file = e.dataTransfer?.files[0]
-    if (file && (!props.accept || file.type.match(props.accept))) {
+    if (file) {
+        if (props.accept) {
+            const acceptedTypes = props.accept.split(',')
+            const fileExt = '.' + file.name.split('.').pop()?.toLowerCase()
+            if (!acceptedTypes.includes(fileExt)) {
+                return
+            }
+        }
         selectedFile.value = file
         emit('update:modelValue', file.name)
         emit('file-selected', file)
@@ -42,9 +52,17 @@ const handleDrop = (e: DragEvent) => {
 const handleFileChange = (event: Event) => {
     const input = event.target as HTMLInputElement
     if (input.files && input.files[0]) {
-        selectedFile.value = input.files[0]
-        emit('update:modelValue', input.files[0].name)
-        emit('file-selected', input.files[0])
+        const file = input.files[0]
+        if (props.accept) {
+            const acceptedTypes = props.accept.split(',')
+            const fileExt = '.' + file.name.split('.').pop()?.toLowerCase()
+            if (!acceptedTypes.includes(fileExt)) {
+                return
+            }
+        }
+        selectedFile.value = file
+        emit('update:modelValue', file.name)
+        emit('file-selected', file)
     }
 }
 

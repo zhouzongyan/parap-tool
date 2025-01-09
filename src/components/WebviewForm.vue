@@ -26,7 +26,7 @@
 
             <div class="input-panel" :class="{ active: modelValue === 'zip' }">
                 <FileUpload ref="zipUploadRef" :modelValue="zipName" accept=".zip" placeholder="选择ZIP文件或拖拽至此" icon="📦"
-                    @file-selected="$emit('zip-selected', $event)" />
+                    @update:modelValue="$emit('update:zipName', $event)" @file-selected="handleZipFileSelected" />
             </div>
         </div>
 
@@ -52,6 +52,7 @@ const emit = defineEmits<{
     'update:modelValue': ['url' | 'html' | 'zip']
     'update:url': [string]
     'update:html': [string]
+    'update:zipName': [string]
     'zip-selected': [File]
     'html-file-selected': [File]
 }>()
@@ -86,6 +87,11 @@ const handleDragEnter = (e: DragEvent) => {
 const handleDragLeave = (e: DragEvent) => {
     e.preventDefault()
     isDragging.value = false
+}
+
+// 处理 ZIP 文件选择
+const handleZipFileSelected = (file: File) => {
+    emit('zip-selected', file)
 }
 </script>
 
