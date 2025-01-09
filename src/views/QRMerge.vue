@@ -124,18 +124,19 @@
                             <template v-if="bgEnabled">
                                 <div class="control-item">
                                     <label>左右边距:</label>
-                                    <input type="range" v-model.number="bgMarginX" :min="0" :max="100" :step="1" />
-                                    <span>{{ bgMarginX }}%</span>
+                                    <input type="range" v-model.number="bgMarginX" :min="0" :max="qrSize" :step="1" />
+                                    <span>{{ bgMarginX }}px</span>
                                 </div>
                                 <div class="control-item">
                                     <label>上边距:</label>
-                                    <input type="range" v-model.number="bgMarginTop" :min="0" :max="100" :step="1" />
-                                    <span>{{ bgMarginTop }}%</span>
+                                    <input type="range" v-model.number="bgMarginTop" :min="0" :max="qrSize" :step="1" />
+                                    <span>{{ bgMarginTop }}px</span>
                                 </div>
                                 <div class="control-item">
                                     <label>下边距:</label>
-                                    <input type="range" v-model.number="bgMarginBottom" :min="0" :max="100" :step="1" />
-                                    <span>{{ bgMarginBottom }}%</span>
+                                    <input type="range" v-model.number="bgMarginBottom" :min="0" :max="qrSize"
+                                        :step="1" />
+                                    <span>{{ bgMarginBottom }}px</span>
                                 </div>
                                 <div class="control-item">
                                     <label>左侧颜色:</label>
@@ -221,7 +222,7 @@ const bgImageName = ref('')
 const qrImageName = ref('')
 const bgImagePreview = ref('')
 const qrImagePreview = ref('')
-const qrSize_power = ref(7)
+const qrSize_power = ref(8)
 const qrSize = computed(() => Math.pow(2, qrSize_power.value))
 
 // 位置状态 - 使用函数计算初始值
@@ -322,20 +323,18 @@ const handleWxImageSelected = async (file: File) => {
 
 // 修改背景相关状态
 const bgEnabled = ref(false)
-const bgMarginX = ref(20)
-const bgMarginTop = ref(20)
-const bgMarginBottom = ref(20)
-const bgColorLeft = ref('#00FF00')
-const bgColorRight = ref('#0000FF')
+const bgMarginX = ref(70)  // 左右边距 10%
+const bgMarginTop = ref(90)  // 上边距 15%
+const bgMarginBottom = ref(50)  // 下边距 15%
+const bgColorLeft = ref('#07C160')  // 微信绿色
+const bgColorRight = ref('#1677FF')  // 支付宝蓝色
 const bgText = ref('支持微信和支付宝')
 const bgFont = ref('微软雅黑')
-const bgFontSize = ref(24)
-const bgTextColor = ref('#FFFFFF')
-const bgTextX = ref(50)
-const bgTextY = ref(50)
-
-// 添加圆角状态
-const bgRadius = ref(0)  // 默认无圆角
+const bgFontSize = ref(32)  // 字体大小调大一些
+const bgTextColor = ref('#FFFFFF')  // 白色文字
+const bgTextX = ref(50)  // 文字水平居中
+const bgTextY = ref(11)  // 文字靠上 15%
+const bgRadius = ref(20)  // 圆角 20px
 
 // 监听背景相关变化
 watch([
