@@ -55,12 +55,12 @@ mysql数据源 转换为json [参考](https://github.com/pzx521521/parap-tool/bl
 # 支付宝和微信收款码二合一(图层合并)
 
 网上看了一下,居然没有**开源免费**通过图层合并实现的.纯前端项目
-[![pE9TGGQ.png](https://s21.ax1x.com/2025/01/07/pE9TGGQ.png)](https://imgse.com/i/pE9TGGQ)
+[![pEC4oOP.png](https://s21.ax1x.com/2025/01/09/pEC4oOP.png)](https://imgse.com/i/pEC4oOP)
 [在线demo](https://tool.parap.us.kg/qr-merge)
 exe(纯webview套壳,需要webview2,win10以上自带)[生成网址](https://tool.parap.us.kg/html-to-exe)
-https://wwtw.lanzouq.com/iBXdc2kfrbij
+https://wwtw.lanzouq.com/i21Ux2kgspqd
 html:  
-https://wwtw.lanzouq.com/iE6ow2kb0vgb
+https://wwtw.lanzouq.com/iDv702kgssrc
 
 [源码](https://github.com/pzx521521/parap-tool)
 
@@ -202,4 +202,4 @@ https://wwtw.lanzouq.com/iE6ow2kb0vgb
 由于并不知道那种方案最好
 添加高级选项,供大家调试
 添加背景选项
-
+添加背景渐变
