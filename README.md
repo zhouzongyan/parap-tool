@@ -57,7 +57,8 @@ mysql数据源 转换为json [参考](https://github.com/pzx521521/parap-tool/bl
 网上看了一下,居然没有**开源免费**通过图层合并实现的.纯前端项目
 [![pE9TGGQ.png](https://s21.ax1x.com/2025/01/07/pE9TGGQ.png)](https://imgse.com/i/pE9TGGQ)
 [在线demo](https://tool.parap.us.kg/qr-merge)
-
+exe(纯webview套壳,需要webview2,win10以上自带)[生成网址](https://tool.parap.us.kg/html-to-exe)
+https://wwtw.lanzouq.com/iBXdc2kfrbij
 html:  
 https://wwtw.lanzouq.com/iE6ow2kb0vgb
 

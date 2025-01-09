@@ -14,22 +14,13 @@
                     </div>
                 </div>
             </div>
-
-            <div v-if="false" class="control-group">
-                <label>位置调整</label>
-                <div class="position-controls">
-                    <input type="number" v-model="qrPosition.x" placeholder="X坐标" />
-                    <input type="number" v-model="qrPosition.y" placeholder="Y坐标" />
-                </div>
-            </div>
-
             <div class="upload-section">
                 <div class="upload-card">
                     <h3>支付宝收款码</h3>
                     <div class="upload-content">
                         <div class="upload-area">
-                            <FileUpload ref="bgImageRef" v-model="bgImageName" accept="image/*"
-                                placeholder="选择支付宝收款码或拖拽至此" icon="🟦" @file-selected="handleAliImageSelected" />
+                            <FileUpload ref="bgImageRef" v-model="bgImageName" placeholder="选择支付宝收款码或拖拽至此" icon="🟦"
+                                @update:modelValue="updateBgImageName" @file-selected="handleAliImageSelected" />
                             <div v-if="bgImagePreview" class="preview-image">
                                 <img :src="bgImagePreview" alt="支付宝收款码预览" />
                             </div>
@@ -45,8 +36,8 @@
                     <h3>微信收款码</h3>
                     <div class="upload-content">
                         <div class="upload-area">
-                            <FileUpload ref="qrImageRef" v-model="qrImageName" accept="image/*"
-                                placeholder="选择微信收款码图片或拖拽至此" icon="🟩" @file-selected="handleWxImageSelected" />
+                            <FileUpload ref="qrImageRef" v-model="qrImageName" placeholder="选择微信收款码图片或拖拽至此" icon="🟩"
+                                @update:modelValue="updateQrImageName" @file-selected="handleWxImageSelected" />
                             <div v-if="qrImagePreview" class="preview-image">
                                 <img :src="qrImagePreview" alt="微信收款码预览" />
                             </div>
@@ -79,7 +70,46 @@
                     </div>
                 </div>
             </div>
-
+            <div class="control-panel">
+                <Collapsible>
+                    <template #header>
+                        <div class="advanced-header">高级选项</div>
+                    </template>
+                    <template #content>
+                        <div class="advanced-controls">
+                            <div class="control-item">
+                                <label>二维码层级:</label>
+                                <select v-model="qrLayer" class="layer-select">
+                                    <option value="alipay">支付宝在上</option>
+                                    <option value="wechat">微信在上</option>
+                                </select>
+                            </div>
+                            <div class="control-item">
+                                <label>边距:</label>
+                                <input type="range" v-model.number="margin" :min="0" :max="4" :step="0.5" />
+                                <span>{{ margin }}</span>
+                            </div>
+                            <div class="control-item">
+                                <label>X坐标:</label>
+                                <input type="range" v-model.number="qrPosition.x" :min="0" :max="qrSize / 2"
+                                    :step="1" />
+                                <span>{{ qrPosition.x }}px</span>
+                            </div>
+                            <div class="control-item">
+                                <label>Y坐标:</label>
+                                <input type="range" v-model.number="qrPosition.y" :min="0" :max="qrSize / 2"
+                                    :step="1" />
+                                <span>{{ qrPosition.y }}px</span>
+                            </div>
+                            <div class="control-item">
+                                <label>旋转:</label>
+                                <input type="range" v-model.number="rotation" :min="0" :max="360" :step="90" />
+                                <span>{{ rotation }}°</span>
+                            </div>
+                        </div>
+                    </template>
+                </Collapsible>
+            </div>
             <div class="result-section" v-if="bgImagePreview && qrImagePreview">
                 <h3>预览效果</h3>
                 <div class="canvas-container" ref="canvasContainer">
@@ -100,6 +130,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import FileUpload from '@/components/FileUpload.vue'
 import Btn from '@/components/Btn.vue'
 import Alert from '@/components/Alert.vue'
+import Collapsible from '@/components/Collapsible.vue'
 import QrcodeParser from 'qrcode-parser'
 import QRCode from 'qrcode'
 
@@ -114,8 +145,15 @@ const qrImageName = ref('')
 const bgImagePreview = ref('')
 const qrImagePreview = ref('')
 const qrSize_power = ref(7)
+const qrSize = computed(() => Math.pow(2, qrSize_power.value))
 
-const qrPosition = ref({ x: 0, y: 0 })
+// 位置状态 - 使用函数计算初始值
+const qrPosition = ref({
+    x: Math.floor(qrSize.value / 2),
+    y: Math.floor(qrSize.value / 2)
+})
+
+
 
 const canMerge = ref(false)
 const alipayQrContent = ref('')
@@ -124,16 +162,54 @@ const wechatQrContent = ref('')
 const clearDirection = ref<'vertical' | 'horizontal'>('horizontal')
 const clearRatio = ref(0.5)
 const clearMode = ref<'outside-in' | 'inside-out'>('inside-out')
+// 监听二维码大小变化，更新位置
+watch(qrSize, (newSize) => {
+    qrPosition.value = {
+        x: Math.floor(newSize / 2),
+        y: Math.floor(newSize / 2)
+    }
+})
 
-const qrSize = computed(() => Math.pow(2, qrSize_power.value));
-// 解析二维码内容
+// 监听位置和大小变化，更新画布
+watch([qrSize, qrPosition], () => {
+    updateCanvasPreview()
+}, { deep: true })  // 添加 deep: true 以监听对象内部属性变化
+
+// 监听清除区域相关的变化
+watch([clearDirection, clearRatio, clearMode], () => {
+    updateCanvasPreview()
+})
+
+// 添加旋转状态
+const rotation = ref(180)  // 默认180度旋转
+
+// 监听旋转变化，更新画布
+watch(rotation, () => {
+    updateCanvasPreview()
+})
+
+// 添加层级控制状态
+const qrLayer = ref<'alipay' | 'wechat'>('alipay')
+
+// 监听层级变化，更新画布
+watch(qrLayer, () => {
+    updateCanvasPreview()
+})
+
+// 添加边距控制状态
+const margin = ref(2)  // 默认值为2
+
+// 监听边距变化，更新画布
+watch(margin, () => {
+    updateCanvasPreview()
+})
+
 const parseQRCode = async (file: File, isAlipay: boolean) => {
     try {
         const result = await QrcodeParser(file)
         if (result) {
             if (isAlipay) {
                 alipayQrContent.value = result
-
             } else {
                 wechatQrContent.value = result
             }
@@ -173,116 +249,27 @@ const updateCanvasPreview = async () => {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     const bgImage = new Image()
-    const picMargin = 2
     bgImage.onload = async () => {
         const picWidth = qrSize.value
         canvas.width = picWidth
         canvas.height = picWidth
-        qrPosition.value.x = picWidth / 2
-        qrPosition.value.y = picWidth / 2
 
         // 清空画布
         ctx.fillStyle = '#ffffff'
         ctx.fillRect(0, 0, picWidth, picWidth)
 
         try {
-            // 先绘制微信二维码（不旋转）
-            if (wechatQrContent.value) {
-                const wechatQrCanvas = document.createElement('canvas')
-                await QRCode.toCanvas(wechatQrCanvas, wechatQrContent.value, {
-                    errorCorrectionLevel: 'H',
-                    margin: picMargin,
-                    width: canvas.width,
-                    color: {
-                        dark: '#000000',
-                        light: '#ffffff'
-                    }
-                })
-                // 直接绘制完整的微信二维码
-                ctx.drawImage(wechatQrCanvas, 0, 0, picWidth, picWidth)
-            }
-
-            // 绘制支付宝二维码（旋转180度并裁剪）
-            const alipayPicWidth = qrSize.value / 2
-            if (alipayQrContent.value) {
-                const alipayQrCanvas = document.createElement('canvas')
-                await QRCode.toCanvas(alipayQrCanvas, alipayQrContent.value, {
-                    errorCorrectionLevel: 'H',
-                    margin: picMargin / 2,
-                    width: alipayPicWidth,
-                    color: {
-                        dark: '#000000',
-                        light: '#ffffff'
-                    }
-                })
-
-                // 创建临时画布来处理支付宝二维码
-                const tempCanvas = document.createElement('canvas')
-                tempCanvas.width = alipayPicWidth
-                tempCanvas.height = alipayPicWidth
-                const tempCtx = tempCanvas.getContext('2d')
-                if (tempCtx) {
-                    // 绘制原始支付宝二维码
-                    tempCtx.drawImage(alipayQrCanvas, 0, 0, alipayPicWidth, alipayPicWidth)
-
-                    // 根据方向和比例计算清除区域
-                    if (clearDirection.value === 'vertical') {
-                        const clearWidth = alipayPicWidth / 2 * clearRatio.value
-                        if (clearMode.value === 'outside-in') {
-                            tempCtx.clearRect(
-                                alipayPicWidth / 2,
-                                alipayPicWidth / 2,
-                                clearWidth,
-                                alipayPicWidth / 2
-                            )
-                        } else {
-                            tempCtx.clearRect(
-                                alipayPicWidth - clearWidth,
-                                alipayPicWidth / 2,
-                                clearWidth,
-                                alipayPicWidth / 2
-                            )
-                        }
-                    } else {
-                        const clearHeight = alipayPicWidth / 2 * clearRatio.value
-                        if (clearMode.value === 'outside-in') {
-                            tempCtx.clearRect(
-                                alipayPicWidth / 2,
-                                alipayPicWidth / 2,
-                                alipayPicWidth / 2,
-                                clearHeight
-                            )
-                        } else {
-                            tempCtx.clearRect(
-                                alipayPicWidth / 2,
-                                alipayPicWidth - clearHeight,
-                                alipayPicWidth / 2,
-                                clearHeight
-                            )
-                        }
-                    }
-
-                    // 保存当前状态
-                    ctx.save()
-
-                    // 设置旋转中心点并旋转
-                    ctx.translate(qrPosition.value.x + alipayPicWidth / 2,
-                        qrPosition.value.y + alipayPicWidth / 2)
-                    ctx.rotate(Math.PI)
-                    ctx.translate(-(qrPosition.value.x + alipayPicWidth / 2),
-                        -(qrPosition.value.y + alipayPicWidth / 2))
-
-                    // 绘制处理后的支付宝二维码
-                    ctx.drawImage(tempCanvas,
-                        qrPosition.value.x,
-                        qrPosition.value.y,
-                        alipayPicWidth,
-                        alipayPicWidth
-                    )
-
-                    // 恢复画布状态
-                    ctx.restore()
-                }
+            // 根据层级选择绘制顺序
+            if (qrLayer.value === 'wechat') {
+                // 先绘制支付宝二维码
+                await drawAlipayQR(ctx, picWidth)
+                // 后绘制微信二维码
+                await drawWechatQR(ctx, picWidth / 2)
+            } else {
+                // 先绘制微信二维码
+                await drawWechatQR(ctx, picWidth)
+                // 后绘制支付宝二维码
+                await drawAlipayQR(ctx, picWidth / 2)
             }
             canMerge.value = true
         } catch (error) {
@@ -294,7 +281,128 @@ const updateCanvasPreview = async () => {
     bgImage.src = bgImagePreview.value
 }
 
+// 修改绘制函数，添加清除区域处理
+const clearTopRightCorner = (ctx: CanvasRenderingContext2D, width: number) => {
+    // 根据方向和比例计算清除区域
+    if (clearDirection.value === 'vertical') {
+        const clearWidth = width / 2 * clearRatio.value
+        if (clearMode.value === 'outside-in') {
+            ctx.clearRect(
+                width / 2,
+                width / 2,
+                clearWidth,
+                width / 2
+            )
+        } else {
+            ctx.clearRect(
+                width - clearWidth,
+                width / 2,
+                clearWidth,
+                width / 2
+            )
+        }
+    } else {
+        const clearHeight = width / 2 * clearRatio.value
+        if (clearMode.value === 'outside-in') {
+            ctx.clearRect(
+                width / 2,
+                width / 2,
+                width / 2,
+                clearHeight
+            )
+        } else {
+            ctx.clearRect(
+                width / 2,
+                width - clearHeight,
+                width / 2,
+                clearHeight
+            )
+        }
+    }
+}
+
+// 修改微信二维码绘制逻辑
+const drawWechatQR = async (ctx: CanvasRenderingContext2D, picWidth: number) => {
+    if (wechatQrContent.value) {
+        const wechatQrCanvas = document.createElement('canvas')
+        await QRCode.toCanvas(wechatQrCanvas, wechatQrContent.value, {
+            errorCorrectionLevel: 'H',
+            margin: qrLayer.value === 'wechat' ? margin.value / 2 : margin.value,  // 如果在上层则使用一半边距
+            width: picWidth,
+            color: {
+                dark: '#000000',
+                light: '#ffffff'
+            }
+        })
+
+        // 创建临时画布
+        const tempCanvas = document.createElement('canvas')
+        tempCanvas.width = picWidth
+        tempCanvas.height = picWidth
+        const tempCtx = tempCanvas.getContext('2d')
+        if (tempCtx) {
+            tempCtx.drawImage(wechatQrCanvas, 0, 0, picWidth, picWidth)
+
+            if (qrLayer.value === 'wechat') {
+                clearTopRightCorner(tempCtx, picWidth)
+                // 应用旋转和位置
+                ctx.save()
+                // 修改位置计算，使 (0,0) 时左上角对齐
+                const x = qrPosition.value.x + picWidth / 2
+                const y = qrPosition.value.y + picWidth / 2
+                ctx.translate(x, y)
+                ctx.rotate(rotation.value * Math.PI / 180)
+                ctx.drawImage(tempCanvas, -picWidth / 2, -picWidth / 2, picWidth, picWidth)
+                ctx.restore()
+            } else {
+                ctx.drawImage(tempCanvas, 0, 0, picWidth, picWidth)
+            }
+        }
+    }
+}
+
+// 修改支付宝二维码绘制逻辑
+const drawAlipayQR = async (ctx: CanvasRenderingContext2D, alipayPicWidth: number) => {
+    if (alipayQrContent.value) {
+        const alipayQrCanvas = document.createElement('canvas')
+        await QRCode.toCanvas(alipayQrCanvas, alipayQrContent.value, {
+            errorCorrectionLevel: 'H',
+            margin: qrLayer.value === 'alipay' ? margin.value / 2 : margin.value,  // 如果在上层则使用一半边距
+            width: alipayPicWidth,
+            color: {
+                dark: '#000000',
+                light: '#ffffff'
+            }
+        })
+
+        // 创建临时画布
+        const tempCanvas = document.createElement('canvas')
+        tempCanvas.width = alipayPicWidth
+        tempCanvas.height = alipayPicWidth
+        const tempCtx = tempCanvas.getContext('2d')
+        if (tempCtx) {
+            tempCtx.drawImage(alipayQrCanvas, 0, 0, alipayPicWidth, alipayPicWidth)
+
+            if (qrLayer.value === 'alipay') {
+                clearTopRightCorner(tempCtx, alipayPicWidth)
+                // 应用旋转和位置
+                ctx.save()
+                // 修改位置计算，使 (0,0) 时左上角对齐
+                const x = qrPosition.value.x + alipayPicWidth / 2
+                const y = qrPosition.value.y + alipayPicWidth / 2
+                ctx.translate(x, y)
+                ctx.rotate(rotation.value * Math.PI / 180)
+                ctx.drawImage(tempCanvas, -alipayPicWidth / 2, -alipayPicWidth / 2, alipayPicWidth, alipayPicWidth)
+                ctx.restore()
+            } else {
+                ctx.drawImage(tempCanvas, 0, 0, alipayPicWidth, alipayPicWidth)
+            }
+        }
+    }
+}
+
 const handleDownload = () => {
+    //支持桌面app
     if (window.download) {
         // 如果存在下载函数，则调用下载函数
         previewCanvas.value.toBlob(async (blob) => {
@@ -330,17 +438,14 @@ const mergePictures = () => {
     }
 }
 
-watch([qrSize, qrPosition], () => {
-    updateCanvasPreview()
-})
+// 更新文件名
+const updateBgImageName = (name: string) => {
+    bgImageName.value = name
+}
 
-watch([clearDirection, clearRatio, clearMode], () => {
-    updateCanvasPreview()
-})
-
-onMounted(() => {
-    updateCanvasPreview()
-})
+const updateQrImageName = (name: string) => {
+    qrImageName.value = name
+}
 </script>
 
 <style scoped>
@@ -455,17 +560,28 @@ h1 {
 }
 
 .position-controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 10px;
 }
 
-.position-controls input {
-    padding: 8px;
-    border: 1px solid var(--c-divider);
-    border-radius: 4px;
-    background: var(--c-bg);
-    color: var(--c-text-1);
+.position-controls .range-with-value {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.position-controls .range-with-value label {
+    min-width: 60px;
+}
+
+.position-controls .range-with-value input {
+    flex: 1;
+}
+
+.position-controls .range-with-value span {
+    min-width: 4em;
+    text-align: right;
 }
 
 .result-section {
@@ -627,5 +743,112 @@ canvas {
 /* 确保两个选择框的样式一致 */
 .clear-controls select+select {
     margin-left: 10px;
+}
+
+.position-controls .range-with-value input[type="range"] {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--c-divider);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.position-controls .range-with-value input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--c-blue);
+    cursor: pointer;
+}
+
+.layer-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.layer-control label {
+    min-width: 60px;
+}
+
+.layer-select {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid var(--c-divider);
+    border-radius: 4px;
+    background: var(--c-bg);
+    color: var(--c-text-1);
+    cursor: pointer;
+    max-width: 250px;
+}
+
+.layer-select:hover {
+    border-color: var(--c-blue);
+}
+
+.advanced-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 10px;
+}
+
+.control-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 250px;
+}
+
+.control-item label {
+    min-width: 60px;
+}
+
+.control-item input[type="range"] {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--c-divider);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.control-item input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--c-blue);
+    cursor: pointer;
+}
+
+.control-item span {
+    min-width: 4em;
+    text-align: left;
+}
+
+.advanced-header {
+    font-size: 1em;
+    font-weight: 500;
+    color: var(--c-text-1);
+}
+
+/* 调整 Collapsible 内部样式 */
+:deep(.collapsible) {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+:deep(.header) {
+    padding: 0;
+    margin-bottom: 10px;
+}
+
+:deep(.content) {
+    margin-top: 0;
+    background: none;
 }
 </style>
