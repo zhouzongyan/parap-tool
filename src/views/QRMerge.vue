@@ -53,7 +53,7 @@
 
             <div class="control-panel">
                 <div class="control-group">
-                    <label>支付宝清除区域</label>
+                    <label>上层图片清除区域</label>
                     <div class="clear-controls">
                         <select v-model="clearDirection">
                             <option value="vertical">纵向</option>
