@@ -147,6 +147,10 @@
                                     <input type="color" v-model="bgColorRight">
                                 </div>
                                 <div class="control-item">
+                                    <label>渐变:</label>
+                                    <input type="checkbox" v-model="bgGradient">
+                                </div>
+                                <div class="control-item">
                                     <label>文字内容:</label>
                                     <input type="text" v-model="bgText" placeholder="输入文字内容">
                                 </div>
@@ -321,20 +325,21 @@ const handleWxImageSelected = async (file: File) => {
     updateCanvasPreview()
 }
 
-// 修改背景相关状态
+// 修改背景相关状态的声明顺序
 const bgEnabled = ref(false)
-const bgMarginX = ref(70)  // 左右边距 10%
-const bgMarginTop = ref(90)  // 上边距 15%
-const bgMarginBottom = ref(50)  // 下边距 15%
-const bgColorLeft = ref('#07C160')  // 微信绿色
-const bgColorRight = ref('#1677FF')  // 支付宝蓝色
+const bgMarginX = ref(70)
+const bgMarginTop = ref(90)
+const bgMarginBottom = ref(50)
+const bgColorLeft = ref('#07C160')
+const bgColorRight = ref('#1677FF')
+const bgGradient = ref(false)
 const bgText = ref('支持微信和支付宝')
 const bgFont = ref('微软雅黑')
-const bgFontSize = ref(32)  // 字体大小调大一些
-const bgTextColor = ref('#FFFFFF')  // 白色文字
-const bgTextX = ref(50)  // 文字水平居中
-const bgTextY = ref(11)  // 文字靠上 15%
-const bgRadius = ref(20)  // 圆角 20px
+const bgFontSize = ref(32)
+const bgTextColor = ref('#FFFFFF')
+const bgTextX = ref(50)
+const bgTextY = ref(11)
+const bgRadius = ref(20)
 
 // 监听背景相关变化
 watch([
@@ -344,18 +349,19 @@ watch([
     bgMarginBottom,
     bgColorLeft,
     bgColorRight,
+    bgGradient,
     bgText,
     bgFont,
     bgFontSize,
     bgTextColor,
     bgTextX,
     bgTextY,
-    bgRadius  // 添加圆角监听
+    bgRadius
 ], () => {
     updateCanvasPreview()
 }, { deep: true })
 
-// 修改圆角矩形绘制函数，添加控制参数
+// 圆角矩形绘制函数
 const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number, roundLeft: boolean, roundRight: boolean) => {
     ctx.beginPath()
 
@@ -396,7 +402,7 @@ const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, wi
     ctx.closePath()
 }
 
-// 修改 updateCanvasPreview 函数
+// 修改 updateCanvasPreview 函数中的背景绘制部分
 const updateCanvasPreview = async () => {
     if (!bgImagePreview.value || !qrImagePreview.value || !previewCanvas.value) return
     const canvas = previewCanvas.value
@@ -417,15 +423,25 @@ const updateCanvasPreview = async () => {
         canvas.height = totalHeight
 
         if (bgEnabled.value) {
-            // 绘制左侧背景（只有左边有圆角）
-            ctx.fillStyle = bgColorLeft.value
-            drawRoundedRect(ctx, 0, 0, totalWidth / 2, totalHeight, bgRadius.value, true, false)
-            ctx.fill()
+            if (bgGradient.value) {
+                // 创建从左到右的渐变
+                const gradient = ctx.createLinearGradient(0, 0, totalWidth, 0)
+                gradient.addColorStop(0, bgColorLeft.value)
+                gradient.addColorStop(1, bgColorRight.value)
+                ctx.fillStyle = gradient
+                // 绘制整个背景
+                drawRoundedRect(ctx, 0, 0, totalWidth, totalHeight, bgRadius.value, true, true)
+                ctx.fill()
+            } else {
+                // 分别绘制左右两侧
+                ctx.fillStyle = bgColorLeft.value
+                drawRoundedRect(ctx, 0, 0, totalWidth / 2, totalHeight, bgRadius.value, true, false)
+                ctx.fill()
 
-            // 绘制右侧背景（只有右边有圆角）
-            ctx.fillStyle = bgColorRight.value
-            drawRoundedRect(ctx, totalWidth / 2, 0, totalWidth / 2, totalHeight, bgRadius.value, false, true)
-            ctx.fill()
+                ctx.fillStyle = bgColorRight.value
+                drawRoundedRect(ctx, totalWidth / 2, 0, totalWidth / 2, totalHeight, bgRadius.value, false, true)
+                ctx.fill()
+            }
 
             // 绘制文字
             ctx.font = `${bgFontSize.value}px ${bgFont.value}`
@@ -1083,5 +1099,13 @@ canvas {
     width: 20px;
     height: 20px;
     cursor: pointer;
+}
+
+.control-item .second-color {
+    margin-left: 10px;
+}
+
+.control-item input[type="checkbox"] {
+    margin: 0 10px;
 }
 </style>
