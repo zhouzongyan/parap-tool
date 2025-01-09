@@ -110,6 +110,83 @@
                     </template>
                 </Collapsible>
             </div>
+            <div class="control-panel">
+                <Collapsible>
+                    <template #header>
+                        <div class="advanced-header">背景选项</div>
+                    </template>
+                    <template #content>
+                        <div class="background-controls">
+                            <div class="control-item">
+                                <label>启用背景:</label>
+                                <input type="checkbox" v-model="bgEnabled">
+                            </div>
+                            <template v-if="bgEnabled">
+                                <div class="control-item">
+                                    <label>左右边距:</label>
+                                    <input type="range" v-model.number="bgMarginX" :min="0" :max="100" :step="1" />
+                                    <span>{{ bgMarginX }}%</span>
+                                </div>
+                                <div class="control-item">
+                                    <label>上边距:</label>
+                                    <input type="range" v-model.number="bgMarginTop" :min="0" :max="100" :step="1" />
+                                    <span>{{ bgMarginTop }}%</span>
+                                </div>
+                                <div class="control-item">
+                                    <label>下边距:</label>
+                                    <input type="range" v-model.number="bgMarginBottom" :min="0" :max="100" :step="1" />
+                                    <span>{{ bgMarginBottom }}%</span>
+                                </div>
+                                <div class="control-item">
+                                    <label>左侧颜色:</label>
+                                    <input type="color" v-model="bgColorLeft">
+                                </div>
+                                <div class="control-item">
+                                    <label>右侧颜色:</label>
+                                    <input type="color" v-model="bgColorRight">
+                                </div>
+                                <div class="control-item">
+                                    <label>文字内容:</label>
+                                    <input type="text" v-model="bgText" placeholder="输入文字内容">
+                                </div>
+                                <div class="control-item">
+                                    <label>字体:</label>
+                                    <select v-model="bgFont">
+                                        <option value="Arial">Arial</option>
+                                        <option value="微软雅黑">微软雅黑</option>
+                                        <option value="宋体">宋体</option>
+                                        <option value="黑体">黑体</option>
+                                    </select>
+                                </div>
+                                <div class="control-item">
+                                    <label>字体大小:</label>
+                                    <input type="range" v-model.number="bgFontSize" :min="12" :max="48" :step="1" />
+                                    <span>{{ bgFontSize }}px</span>
+                                </div>
+                                <div class="control-item">
+                                    <label>字体颜色:</label>
+                                    <input type="color" v-model="bgTextColor">
+                                </div>
+                                <div class="control-item">
+                                    <label>文字X:</label>
+                                    <input type="range" v-model.number="bgTextX" :min="0" :max="100" :step="1" />
+                                    <span>{{ bgTextX }}%</span>
+                                </div>
+                                <div class="control-item">
+                                    <label>文字Y:</label>
+                                    <input type="range" v-model.number="bgTextY" :min="0" :max="100" :step="1" />
+                                    <span>{{ bgTextY }}%</span>
+                                </div>
+                                <div class="control-item">
+                                    <label>圆角:</label>
+                                    <input type="range" v-model.number="bgRadius" :min="0" :max="50" :step="1" />
+                                    <span>{{ bgRadius }}px</span>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </Collapsible>
+            </div>
             <div class="result-section" v-if="bgImagePreview && qrImagePreview">
                 <h3>预览效果</h3>
                 <div class="canvas-container" ref="canvasContainer">
@@ -243,32 +320,146 @@ const handleWxImageSelected = async (file: File) => {
     updateCanvasPreview()
 }
 
+// 修改背景相关状态
+const bgEnabled = ref(false)
+const bgMarginX = ref(20)
+const bgMarginTop = ref(20)
+const bgMarginBottom = ref(20)
+const bgColorLeft = ref('#00FF00')
+const bgColorRight = ref('#0000FF')
+const bgText = ref('支持微信和支付宝')
+const bgFont = ref('微软雅黑')
+const bgFontSize = ref(24)
+const bgTextColor = ref('#FFFFFF')
+const bgTextX = ref(50)
+const bgTextY = ref(50)
+
+// 添加圆角状态
+const bgRadius = ref(0)  // 默认无圆角
+
+// 监听背景相关变化
+watch([
+    bgEnabled,
+    bgMarginX,
+    bgMarginTop,
+    bgMarginBottom,
+    bgColorLeft,
+    bgColorRight,
+    bgText,
+    bgFont,
+    bgFontSize,
+    bgTextColor,
+    bgTextX,
+    bgTextY,
+    bgRadius  // 添加圆角监听
+], () => {
+    updateCanvasPreview()
+}, { deep: true })
+
+// 修改圆角矩形绘制函数，添加控制参数
+const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number, roundLeft: boolean, roundRight: boolean) => {
+    ctx.beginPath()
+
+    // 左上角
+    if (roundLeft) {
+        ctx.moveTo(x + radius, y)
+    } else {
+        ctx.moveTo(x, y)
+    }
+
+    // 右上角
+    if (roundRight) {
+        ctx.lineTo(x + width - radius, y)
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+    } else {
+        ctx.lineTo(x + width, y)
+    }
+
+    // 右下角
+    if (roundRight) {
+        ctx.lineTo(x + width, y + height - radius)
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+    } else {
+        ctx.lineTo(x + width, y + height)
+    }
+
+    // 左下角
+    if (roundLeft) {
+        ctx.lineTo(x + radius, y + height)
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+        ctx.lineTo(x, y + radius)
+        ctx.quadraticCurveTo(x, y, x + radius, y)
+    } else {
+        ctx.lineTo(x, y + height)
+        ctx.lineTo(x, y)
+    }
+
+    ctx.closePath()
+}
+
+// 修改 updateCanvasPreview 函数
 const updateCanvasPreview = async () => {
     if (!bgImagePreview.value || !qrImagePreview.value || !previewCanvas.value) return
     const canvas = previewCanvas.value
     const ctx = canvas.getContext('2d')
     if (!ctx) return
+
     const bgImage = new Image()
     bgImage.onload = async () => {
         const picWidth = qrSize.value
-        canvas.width = picWidth
-        canvas.height = picWidth
 
-        // 清空画布
-        ctx.fillStyle = '#ffffff'
-        ctx.fillRect(0, 0, picWidth, picWidth)
+        // 如果启用背景，增加边距
+        const totalWidth = bgEnabled.value ?
+            picWidth + bgMarginX.value * 2 : picWidth
+        const totalHeight = bgEnabled.value ?
+            picWidth + bgMarginTop.value + bgMarginBottom.value : picWidth
+
+        canvas.width = totalWidth
+        canvas.height = totalHeight
+
+        if (bgEnabled.value) {
+            // 绘制左侧背景（只有左边有圆角）
+            ctx.fillStyle = bgColorLeft.value
+            drawRoundedRect(ctx, 0, 0, totalWidth / 2, totalHeight, bgRadius.value, true, false)
+            ctx.fill()
+
+            // 绘制右侧背景（只有右边有圆角）
+            ctx.fillStyle = bgColorRight.value
+            drawRoundedRect(ctx, totalWidth / 2, 0, totalWidth / 2, totalHeight, bgRadius.value, false, true)
+            ctx.fill()
+
+            // 绘制文字
+            ctx.font = `${bgFontSize.value}px ${bgFont.value}`
+            ctx.fillStyle = bgTextColor.value
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+
+            // 使用百分比计算文字位置
+            const textX = totalWidth * (bgTextX.value / 100)
+            const textY = totalHeight * (bgTextY.value / 100)
+
+            ctx.fillText(bgText.value, textX, textY)
+        } else {
+            // 清空画布
+            ctx.fillStyle = '#ffffff'
+            ctx.fillRect(0, 0, totalWidth, totalHeight)
+        }
+
+        // 保存当前状态
+        ctx.save()
+
+        // 移动到二维码绘制位置
+        if (bgEnabled.value) {
+            ctx.translate(bgMarginX.value, bgMarginTop.value)
+        }
 
         try {
-            // 根据层级选择绘制顺序
+            // 绘制二维码
             if (qrLayer.value === 'wechat') {
-                // 先绘制支付宝二维码
                 await drawAlipayQR(ctx, picWidth)
-                // 后绘制微信二维码
                 await drawWechatQR(ctx, picWidth / 2)
             } else {
-                // 先绘制微信二维码
                 await drawWechatQR(ctx, picWidth)
-                // 后绘制支付宝二维码
                 await drawAlipayQR(ctx, picWidth / 2)
             }
             canMerge.value = true
@@ -277,48 +468,11 @@ const updateCanvasPreview = async () => {
             alertRef.value.show('二维码生成失败')
             canMerge.value = false
         }
+
+        // 恢复状态
+        ctx.restore()
     }
     bgImage.src = bgImagePreview.value
-}
-
-// 修改绘制函数，添加清除区域处理
-const clearTopRightCorner = (ctx: CanvasRenderingContext2D, width: number) => {
-    // 根据方向和比例计算清除区域
-    if (clearDirection.value === 'vertical') {
-        const clearWidth = width / 2 * clearRatio.value
-        if (clearMode.value === 'outside-in') {
-            ctx.clearRect(
-                width / 2,
-                width / 2,
-                clearWidth,
-                width / 2
-            )
-        } else {
-            ctx.clearRect(
-                width - clearWidth,
-                width / 2,
-                clearWidth,
-                width / 2
-            )
-        }
-    } else {
-        const clearHeight = width / 2 * clearRatio.value
-        if (clearMode.value === 'outside-in') {
-            ctx.clearRect(
-                width / 2,
-                width / 2,
-                width / 2,
-                clearHeight
-            )
-        } else {
-            ctx.clearRect(
-                width / 2,
-                width - clearHeight,
-                width / 2,
-                clearHeight
-            )
-        }
-    }
 }
 
 // 修改微信二维码绘制逻辑
@@ -445,6 +599,46 @@ const updateBgImageName = (name: string) => {
 
 const updateQrImageName = (name: string) => {
     qrImageName.value = name
+}
+
+// 添加清除右上角的函数
+const clearTopRightCorner = (ctx: CanvasRenderingContext2D, width: number) => {
+    // 根据方向和比例计算清除区域
+    if (clearDirection.value === 'vertical') {
+        const clearWidth = width / 2 * clearRatio.value
+        if (clearMode.value === 'outside-in') {
+            ctx.clearRect(
+                width / 2,
+                width / 2,
+                clearWidth,
+                width / 2
+            )
+        } else {
+            ctx.clearRect(
+                width - clearWidth,
+                width / 2,
+                clearWidth,
+                width / 2
+            )
+        }
+    } else {
+        const clearHeight = width / 2 * clearRatio.value
+        if (clearMode.value === 'outside-in') {
+            ctx.clearRect(
+                width / 2,
+                width / 2,
+                width / 2,
+                clearHeight
+            )
+        } else {
+            ctx.clearRect(
+                width / 2,
+                width - clearHeight,
+                width / 2,
+                clearHeight
+            )
+        }
+    }
 }
 </script>
 
@@ -850,5 +1044,45 @@ canvas {
 :deep(.content) {
     margin-top: 0;
     background: none;
+}
+
+.background-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 10px;
+}
+
+.control-item input[type="color"] {
+    width: 50px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--c-divider);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.control-item input[type="text"] {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid var(--c-divider);
+    border-radius: 4px;
+    background: var(--c-bg);
+    color: var(--c-text-1);
+}
+
+.control-item select {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid var(--c-divider);
+    border-radius: 4px;
+    background: var(--c-bg);
+    color: var(--c-text-1);
+    cursor: pointer;
+}
+
+.control-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
 }
 </style>
