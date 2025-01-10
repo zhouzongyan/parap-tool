@@ -121,22 +121,59 @@
                                 <label>启用背景:</label>
                                 <input type="checkbox" v-model="bgEnabled">
                             </div>
-                            <template v-if="bgEnabled">
+                            <div class="control-item">
+                                <label>自定义背景:</label>
+                                <input type="checkbox" v-model="bgCustomEnabled" :disabled="!bgEnabled">
+                            </div>
+                            <template v-if="bgEnabled && bgCustomEnabled">
+                                <div class="custom-bg-controls">
+                                    <FileUpload ref="bgImageUploadRef" :modelValue="customBgName"
+                                        placeholder="选择背景图片或拖拽至此" icon="🖼️" @file-selected="handleCustomBgSelected"
+                                        class="upload-minwidth" />
+                                    <div class="adjust-section">
+                                        <div class="control-item">
+                                            <label>背景缩放:</label>
+                                            <input type="range" v-model.number="bgScale" :min="50" :max="200"
+                                                :step="1" />
+                                            <span>{{ bgScale }}%</span>
+                                        </div>
+                                        <div class="control-item">
+                                            <label>二维码透明度:</label>
+                                            <input type="range" v-model.number="qrOpacity" :min="0" :max="100"
+                                                :step="1" />
+                                            <span>{{ qrOpacity }}%</span>
+                                        </div>
+                                        <div class="control-item">
+                                            <label>二维码位置X:</label>
+                                            <input type="range" v-model.number="qrPositionX" :min="0" :max="100"
+                                                :step="1" />
+                                            <span>{{ qrPositionX }}%</span>
+                                        </div>
+                                        <div class="control-item">
+                                            <label>二维码位置Y:</label>
+                                            <input type="range" v-model.number="qrPositionY" :min="0" :max="100"
+                                                :step="1" />
+                                            <span>{{ qrPositionY }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                            <template v-else-if="bgEnabled">
                                 <div class="control-item">
                                     <label>左右边距:</label>
                                     <input type="range" v-model.number="bgMarginX" :min="0" :max="qrSize" :step="1" />
-                                    <span>{{ bgMarginX }}px</span>
+                                    <span>{{ bgMarginX }}%</span>
                                 </div>
                                 <div class="control-item">
                                     <label>上边距:</label>
                                     <input type="range" v-model.number="bgMarginTop" :min="0" :max="qrSize" :step="1" />
-                                    <span>{{ bgMarginTop }}px</span>
+                                    <span>{{ bgMarginTop }}%</span>
                                 </div>
                                 <div class="control-item">
                                     <label>下边距:</label>
                                     <input type="range" v-model.number="bgMarginBottom" :min="0" :max="qrSize"
                                         :step="1" />
-                                    <span>{{ bgMarginBottom }}px</span>
+                                    <span>{{ bgMarginBottom }}%</span>
                                 </div>
                                 <div class="control-item">
                                     <label>左侧颜色:</label>
@@ -327,9 +364,9 @@ const handleWxImageSelected = async (file: File) => {
 
 // 修改背景相关状态的声明顺序
 const bgEnabled = ref(false)
-const bgMarginX = ref(70)
-const bgMarginTop = ref(90)
-const bgMarginBottom = ref(50)
+const bgMarginX = ref(13)
+const bgMarginTop = ref(41)
+const bgMarginBottom = ref(17)
 const bgColorLeft = ref('#07C160')
 const bgColorRight = ref('#1677FF')
 const bgGradient = ref(false)
@@ -338,7 +375,7 @@ const bgFont = ref('微软雅黑')
 const bgFontSize = ref(32)
 const bgTextColor = ref('#FFFFFF')
 const bgTextX = ref(50)
-const bgTextY = ref(11)
+const bgTextY = ref(14)
 const bgRadius = ref(20)
 
 // 监听背景相关变化
@@ -402,34 +439,96 @@ const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, wi
     ctx.closePath()
 }
 
-// 修改 updateCanvasPreview 函数中的背景绘制部分
+// 添加自定义背景相关状态
+const bgCustomEnabled = ref(false)
+const customBgName = ref('')
+const customBgImage = ref<HTMLImageElement | null>(null)
+const qrPositionX = ref(50)  // 二维码在背景中的X位置（百分比）
+const qrPositionY = ref(50)  // 二维码在背景中的Y位置（百分比）
+const qrOpacity = ref(100)   // 二维码透明度（百分比）
+
+// 处理自定义背景图片选择
+const handleCustomBgSelected = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+            customBgImage.value = img
+            updateCanvasPreview()
+        }
+        img.src = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+}
+
+// 添加背景缩放状态
+const bgScale = ref(100)  // 默认 100%
+
+// 修改 updateCanvasPreview 函数中的自定义背景处理部分
 const updateCanvasPreview = async () => {
-    if (!bgImagePreview.value || !qrImagePreview.value || !previewCanvas.value) return
+    if (!previewCanvas.value) return
     const canvas = previewCanvas.value
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const bgImage = new Image()
-    bgImage.onload = async () => {
-        const picWidth = qrSize.value
+    const picWidth = qrSize.value
 
-        // 如果启用背景，增加边距
-        const totalWidth = bgEnabled.value ?
-            picWidth + bgMarginX.value * 2 : picWidth
-        const totalHeight = bgEnabled.value ?
-            picWidth + bgMarginTop.value + bgMarginBottom.value : picWidth
+    if (bgEnabled.value) {
+        if (bgCustomEnabled.value && customBgImage.value) {
+            // 使用自定义背景
+            const img = customBgImage.value
+            const aspectRatio = img.width / img.height
 
-        canvas.width = totalWidth
-        canvas.height = totalHeight
+            // 设置画布基础尺寸
+            const baseWidth = picWidth * 2
+            const baseHeight = baseWidth / aspectRatio
 
-        if (bgEnabled.value) {
+            // 应用缩放
+            const scale = bgScale.value / 100
+            canvas.width = baseWidth * scale
+            canvas.height = baseHeight * scale
+
+            // 绘制背景图
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+            // 创建临时画布绘制二维码
+            const tempCanvas = document.createElement('canvas')
+            tempCanvas.width = picWidth
+            tempCanvas.height = picWidth
+            const tempCtx = tempCanvas.getContext('2d')
+            if (tempCtx) {
+                // 在临时画布上绘制二维码
+                if (qrLayer.value === 'wechat') {
+                    await drawAlipayQR(tempCtx, picWidth)
+                    await drawWechatQR(tempCtx, picWidth / 2)
+                } else {
+                    await drawWechatQR(tempCtx, picWidth)
+                    await drawAlipayQR(tempCtx, picWidth / 2)
+                }
+
+                // 计算二维码位置
+                const x = (canvas.width - picWidth) * (qrPositionX.value / 100)
+                const y = (canvas.height - picWidth) * (qrPositionY.value / 100)
+
+                // 设置透明度并绘制二维码
+                ctx.globalAlpha = qrOpacity.value / 100
+                ctx.drawImage(tempCanvas, x, y, picWidth, picWidth)
+                ctx.globalAlpha = 1.0
+            }
+        } else {
+            // 默认背景逻辑
+            const totalWidth = picWidth + bgMarginX.value * picWidth / 100 * 2
+            const totalHeight = picWidth + (bgMarginTop.value + bgMarginBottom.value) * picWidth / 100
+
+            canvas.width = totalWidth
+            canvas.height = totalHeight
+
             if (bgGradient.value) {
                 // 创建从左到右的渐变
                 const gradient = ctx.createLinearGradient(0, 0, totalWidth, 0)
                 gradient.addColorStop(0, bgColorLeft.value)
                 gradient.addColorStop(1, bgColorRight.value)
                 ctx.fillStyle = gradient
-                // 绘制整个背景
                 drawRoundedRect(ctx, 0, 0, totalWidth, totalHeight, bgRadius.value, true, true)
                 ctx.fill()
             } else {
@@ -449,27 +548,39 @@ const updateCanvasPreview = async () => {
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
 
-            // 使用百分比计算文字位置
             const textX = totalWidth * (bgTextX.value / 100)
             const textY = totalHeight * (bgTextY.value / 100)
-
             ctx.fillText(bgText.value, textX, textY)
-        } else {
-            // 清空画布
-            ctx.fillStyle = '#ffffff'
-            ctx.fillRect(0, 0, totalWidth, totalHeight)
-        }
 
-        // 保存当前状态
-        ctx.save()
-
-        // 移动到二维码绘制位置
-        if (bgEnabled.value) {
-            ctx.translate(bgMarginX.value, bgMarginTop.value)
+            // 绘制二维码
+            ctx.save()
+            ctx.translate(bgMarginX.value * picWidth / 100, bgMarginTop.value * picWidth / 100)
+            try {
+                if (qrLayer.value === 'wechat') {
+                    await drawAlipayQR(ctx, picWidth)
+                    await drawWechatQR(ctx, picWidth / 2)
+                } else {
+                    await drawWechatQR(ctx, picWidth)
+                    await drawAlipayQR(ctx, picWidth / 2)
+                }
+                canMerge.value = true
+            } catch (error) {
+                console.error('Error generating QR codes:', error)
+                alertRef.value.show('二维码生成失败')
+                canMerge.value = false
+            }
+            ctx.restore()
         }
+    } else {
+        // 不启用背景时的逻辑
+        canvas.width = picWidth
+        canvas.height = picWidth
+
+        // 清空画布
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, picWidth, picWidth)
 
         try {
-            // 绘制二维码
             if (qrLayer.value === 'wechat') {
                 await drawAlipayQR(ctx, picWidth)
                 await drawWechatQR(ctx, picWidth / 2)
@@ -483,11 +594,7 @@ const updateCanvasPreview = async () => {
             alertRef.value.show('二维码生成失败')
             canMerge.value = false
         }
-
-        // 恢复状态
-        ctx.restore()
     }
-    bgImage.src = bgImagePreview.value
 }
 
 // 修改微信二维码绘制逻辑
@@ -655,6 +762,18 @@ const clearTopRightCorner = (ctx: CanvasRenderingContext2D, width: number) => {
         }
     }
 }
+
+// 添加到监听列表
+watch([
+    // ... 原有的监听项 ...
+    bgCustomEnabled,
+    qrPositionX,
+    qrPositionY,
+    qrOpacity,
+    bgScale
+], () => {
+    updateCanvasPreview()
+}, { deep: true })
 </script>
 
 <style scoped>
@@ -874,7 +993,6 @@ canvas {
     width: 100%;
     height: 200px;
     border-radius: 8px;
-    overflow: hidden;
 }
 
 .upload-area :deep(.file-upload) {
@@ -1107,5 +1225,70 @@ canvas {
 
 .control-item input[type="checkbox"] {
     margin: 0 10px;
+}
+
+.preview-image {
+    margin-top: 10px;
+    max-width: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.preview-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.custom-bg-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+
+.adjust-section {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.upload-minwidth {
+    min-width: 300px;
+}
+
+.control-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.control-item label {
+    min-width: 100px;
+    text-align: left;
+}
+
+.control-item input[type="range"] {
+    flex: 1;
+}
+
+.control-item span {
+    min-width: 4em;
+    text-align: left;
+}
+
+/* 修改 FileUpload 组件的样式 */
+:deep(.file-upload-wrapper) {
+    min-height: 200px;
+    margin: 0;
+}
+
+:deep(.file-upload-label) {
+    height: 100%;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 </style>
