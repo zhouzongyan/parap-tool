@@ -4,7 +4,7 @@
 import Theme from "@/components/Theme.vue";
 </script>
 
-<template>
+<template class="bodyTheme">
   <header class="fixed-header">
     <slot name="header"></slot>
     <Theme/>
@@ -20,6 +20,9 @@ import Theme from "@/components/Theme.vue";
 </template>
 
 <style scoped>
+.bodyTheme {
+  background-image: "url('bg.jpg')";
+}
 .fixed-header {
   position: fixed;
   left: 0;
